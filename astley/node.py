@@ -81,12 +81,15 @@ class Node:
         return self.sym.format(self=self)
 
     def compile(self, filename=None):
+        '''Return compiled code version of node.'''
         raise TypeError('Node is not a code segment.')
 
     def eval(self, globa=None, loca=None):
-        return eval(self.compile(), globa or globals(), loca or dict())
+        '''Evaluate node given globals and locals.'''
+        return eval(
+            self.compile(),
+            globa or globals(), loca or dict())
 
     def exec(self, globa=None, loca=None):
+        '''Execute node given globals and locals.'''
         exec(self.compile(), globa or globals(), loca or dict())
-
-    parse = staticmethod(parse)
