@@ -1,12 +1,29 @@
 # Astley
 
-Astley is an enhancement to Python's `ast` module. Keeping compatability with 
+Astley is an enhancement to Python's `ast` module, keeping full compatability. It currently offers:
 
-Currently, Astley is designed for Python 3.7, and has not yet been tested for previous versions.
+* Extended nodes, allowing for easy code creation with familiar syntax;
+* `Language`, an extended version of `NodeTransformer`.
+
+Currently, Astley is still in development, so it promises no compatability to versions other than Python 3.7. Please submit any bugs with 3.7 on the tracker.
 
 ## Usage
 
+```python
 
+import astley as ast
+code = 'f(x**2 + y, end="!")'
+node1 = ast.parse(code, mode='eval')
+print(node1) # f(x ** 2 + y, end='!')
+f, x, y = map(ast.Name, 'fxy')
+node2 = f(x**2 + y, end="!")
+print(node2) # f(x ** 2 + y, end='!')
+
+f, x, y = print, 10, 4
+node1.eval(locals()) # 116!
+node2 = ast.copyfix(node1, node2)
+node2.eval(locals()) # 116!
+```
 
 ## Legal
 
