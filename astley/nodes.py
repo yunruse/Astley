@@ -1,6 +1,8 @@
 '''All nodes used of other node kinds.'''
 
 import _ast as ast
+from ast import fix_missing_locations as fix
+
 from .node import Node
 
 class BaseNode(Node):
@@ -9,18 +11,14 @@ class BaseNode(Node):
 class Expression(ast.Expression, BaseNode):
     sym = '{self.body}'
     def compile(self, filename='<unknown>'):
-        return compile(self, filename, 'eval')
+        return compile(fix(self), filename, 'eval')
 
 class Module(ast.Module, BaseNode):
     def __str__(self, index=0):
-        return '\n'.join('   ' * index + str(stmt) for stmt in self.body)
+        return '\n'.join(
+            '   ' * index + str(stmt) for stmt in self.body)
     def compile(self, filename='<unknown>'):
-        return compile(self, filename, 'exec')
-
-class stmt(Node):
-    '''Statement node - subclasses may be exec'd'''
-    def compile(self, filename='<unknown>'):
-        return Module(body=[self]).compile(filename)
+        return compile(fix(self), filename, 'exec')
 
 #% helpers
 

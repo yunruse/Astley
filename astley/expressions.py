@@ -3,6 +3,7 @@
 from .nodes import *
 from .datanodes import keyword
 from . import ops
+from .helpers import copyfix
 
 __all__ = []
 
@@ -16,7 +17,8 @@ def all(obj):
 class expr(Node):
     '''Expression node - subclasses may be eval'd'''
     def compile(self, filename='<unknown>'):
-        return Expression(body=self).compile(filename)
+        expr = copyfix(self, Expression(body=self))
+        return expr.compile(filename)
         
     def __call__(self, *args, **kwargs):
         return Call(

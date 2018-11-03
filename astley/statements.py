@@ -1,5 +1,13 @@
 '''Statements that may only be exec'd'''
+
 from .nodes import *
+from .helpers import copyfix
+
+class stmt(Node):
+    '''Statement node - subclasses may be exec'd'''
+    def compile(self, filename='<unknown>'):
+        module = copyfix(self, Module(body=[self]))
+        return module.compile(filename)
 
 class assign(stmt):
     '''Base class for assignment statements'''
