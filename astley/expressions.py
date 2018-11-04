@@ -108,7 +108,7 @@ class Bytes(expr, ast.Bytes):
 class JoinedStr(expr, ast.JoinedStr):
     def asRaw(self):
         return ''.join(
-            i.s if isinstance(i, Str) else str(i)
+            i.s if isinstance(i, Str) else i.asPython()
             for i in self.values)
     
     def asPython(self):
@@ -124,8 +124,9 @@ class Attribute(expr, ast.Attribute):
 class Call(expr, ast.Call):
     defaults = {'keywords': [], 'args': []}
     def asPython(self):
-        return '{}({})'.format(self.func, ', '.join(
-            map(str, self.args + self.keywords)))
+        return '{}({})'.format(
+            self.func.asPython(), ', '.join(
+                i.asPython() for i in self.args + self.keywords))
 
 @all
 class IfExp(expr, ast.IfExp):
@@ -135,19 +136,19 @@ class functionKind:
     pass
 @all
 class Lambda(functionKind, expr, ast.Lambda):
-    def asPython(self):
-        return 'lambda {}: {}'.format(self.args, self.body)
+    sym = 'lambda {self.args}: {self.body}'
 
 # Iterables
 
 @all
 class iter(expr):
-    pass
+    @property
+    def _elts(self):
+        return ', '.join(i.asPython() for i in self.elts)
 
 @all
 class List(iter, ast.List):
-    def asPython(self):
-        return '[{}]'.format(', '.join(map(str, self.elts)))
+    sym = '[{self._elts}]'
 @all
 class Tuple(iter, ast.Tuple):
     defaults = {'ctx': load}
@@ -156,43 +157,41 @@ class Tuple(iter, ast.Tuple):
         if len(elts) == 1:
             elts = (*elts, '')
         if elts:
-            return ', '.join(map(str, elts))
+            return self._elts
         else:
             return '()'
 @all
 class Dict(iter, ast.Dict):
     def asPython(self):
         return '{{{}}}'.format(', '.join(
-            '{}: {}'.format(k, v) for k, v
-            in zip(self.keys, self.values)))
+            k.asPython() + ': ' + v.asPython()
+            for k, v in zip(self.keys, self.values)))
 @all
 class Set(iter, ast.Set):
     def asPython(self):
         if self.elts:
-            return '{{{}}}'.format(', '.join(map(str, self.elts)))
+            return '{{{}}}'.format(self._elts)
         else:
             return 'set()'
 @all
 class comp(expr):
     '''Iterable comprehension'''
-    sym='{self.elements}'
-    target = property(lambda s: s.elt)
+    sym = '{self.elt} {self.elements}'
     elements = property(lambda s: ' '.join(
-        map(str, (s.target, *s.generators))))
+        i.asPython() for i in s.generators))
 
 @all
 class GeneratorExp(comp, ast.GeneratorExp):
     pass
 @all
 class SetComp(comp, ast.SetComp):
-    sym='{{{self.elements}}}'
+    sym = '{{{self.elt} {self.elements}}}'
 @all
 class ListComp(comp, ast.ListComp):
-    sym='[{self.elements}]'
+    sym = '[{self.elt} {self.elements}]'
 @all
 class DictComp(comp, ast.DictComp):
-    sym='{{{self.elements}}}'
-    target = property(lambda s: '{}: {}'.format(s.key, s.value))
+    sym = '{{{self.key}: {self.value} {self.elements}}}'
 
 #% Operators
 @all
@@ -211,12 +210,12 @@ requiresParentheses = (
 class BinOp(OpApplier, ast.BinOp):
     '''Binary infix operator (+, -, and, etc) '''
     def asPython(self):
-        # Add brackets to ensure cases such as '(a + b) * c' are represented well
-        left, right = str(self.left), str(self.right)
+        # Add brackets to ensure cases such as '(a + b) * c'
+        # are represented correctly
         pm = ops.precedence[self.op.__class__.__name__]
 
         def name(node):
-            name = str(node)
+            name = node.asPython()
             if isinstance(node, ast.BinOp):
                 pinner = ops.precedence[node.op.__class__.__name__]
                 if pm > pinner:
@@ -226,7 +225,8 @@ class BinOp(OpApplier, ast.BinOp):
             
             return name
         
-        return "{} {} {}".format(name(self.left), self.op, name(self.right))
+        return "{} {} {}".format(
+            name(self.left), self.op.asPython(), name(self.right))
 
 @all
 class BoolOp(OpApplier, ast.BoolOp):
@@ -240,7 +240,8 @@ class BoolOp(OpApplier, ast.BoolOp):
                 and isinstance(v.op, ast.And)):
                     self.values[i] = '(' + values[i] + ')'
         
-        return (' '+str(self.op)+' ').join(map(str,self.values))
+        return (' '+self.op.asPython()+' ').join(
+            i.asPython() for i in self.values)
     
     def and_(self, other):
         if isinstance(self.op, ast.And):

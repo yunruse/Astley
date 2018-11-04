@@ -16,7 +16,8 @@ class Expression(ast.Expression, BaseNode):
 class Module(ast.Module, BaseNode):
     def asPython(self, index=0):
         return '\n'.join(
-            '   ' * index + str(stmt) for stmt in self.body)
+            '   ' * index + stmt.asPython()
+            for stmt in self.body)
     def compile(self, filename='<unknown>'):
         return compile(fix(self), filename, 'exec')
 

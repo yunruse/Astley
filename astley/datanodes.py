@@ -32,35 +32,33 @@ class arguments(ast.arguments, datanode):
 
 class alias(ast.alias, datanode):
     '''used in import, extended with withitem'''
+    defaults = {'asname': None}
     vars = 'name asname'.split()
     def asPython(self):
         name, alias = (getattr(self, i, None) for i in self.vars)
+        name = name.asPython()
         if alias:
-            return '{} as {}'.format(name, alias)
+            return name + ' as ' + alias.asPython()
         else:
-            return str(name)
-    defaults = {'asname': None}
+            return name
 
 class withitem(ast.alias):
     '''Aliases in With block'''
-    vars = 'context_expr optional_vars'.split()
     defaults = {'optional_vars': None}
+    vars = 'context_expr optional_vars'.split()
 
 class FormattedValue(ast.FormattedValue, datanode):
     '''String and formatting used in f-string'''
     def asPython(self):
-        n = str(self.value)
+        n = self.value.asPython()
         if self.format_spec:
             n += ':' + str(self.format_spec.asRaw())
         return '{'+n+'}'
 
 class comprehension(ast.comprehension, datanode):
     '''Iterator and targets in comprehenson expressions'''
-    def asPython(self):
-        name = 'for {} in {}'
-        if self.is_async:
-            name = 'async ' + name
-        return name.format(self.target, self.iter)
+    sym = '{self.async_}for {self.target} in {self.iter}'
+    async_ = property(lambda s: 'async ' * s.is_async)
 
 class slice(datanode):
     pass
@@ -70,9 +68,10 @@ class Index(ast.Index, slice):
 
 class Slice(ast.Slice, slice):
     def asPython(self):
-        lower = str(self.lower) if self.lower else ''
-        upper = str(self.upper) if self.upper else ''
+        lo = self.lower.asPython() if self.lower else ''
+        hi = self.upper.asPython() if self.upper else ''
         if self.step:
-            return '{}:{}:{}'.format(lower, upper, self.step)
+            return '{}:{}:{}'.format(
+                lo, hi, self.step.asPython())
         else:
-            return '{}:{}'.format(lower, upper)
+            return '{}:{}'.format(lo, hi)

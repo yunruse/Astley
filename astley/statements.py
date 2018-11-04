@@ -16,7 +16,8 @@ class Assign(assign, ast.Assign):
     '''Assignment of value(s)'''
     def asPython(self):
         return '{} = {}'.format(
-            ', '.join(map(str, self.targets)), self.value)
+            ', '.join(i.asPython() for i in self.targets),
+            self.value)
 
 class AugAssign(assign, ast.AugAssign):
     '''Augmented in-place assignment (eg +=)'''
@@ -30,14 +31,19 @@ class AnnAssign(assign, ast.AnnAssign):
             return '{}: {} = {}'.format(
                 self.target, self.annotation, self.value)
         return '{} = {}'.format(
-            ', '.join(map(str, self.targets)), self.value)
+            ', '.join(i.asPython() for i in self.targets),
+            self.value)
 
 
 class oneliner(stmt):
     '''Base class: One-line statement.'''
     def asPython(self):
         v = getattr(self, 'value', getattr(self, 'exc', None))
-        return getattr(self, 'sym') + (' '+str(v))*bool(v)
+        sym = getattr(self, 'sym')
+        if v:
+            return sym + ' ' + v.asPython()
+        else:
+            return sym
 
 class Return(ast.Return): sym='return'
 class Delete(oneliner, ast.Delete): sym='del'
@@ -50,11 +56,12 @@ class Nonlocal(oneliner, ast.Nonlocal): sym='nonlocal'
 
 class Assert(oneliner, ast.Assert):
     def asPython(self):
+        code = 'assert ' + self.test.asPython()
         msg = getattr(self, 'msg', None)
         if msg:
-            return 'assert {}, {}'.format(self.test, msg)
+            return code + ', ' + msg.asPython()
         else:
-            return 'assert {}'.format(self.test)
+            return code
 
 class word(oneliner):
     '''Base class: Single-word statements.'''
@@ -68,12 +75,14 @@ class import_(stmt):
 
 class Import(ast.Import):
     def asPython(import_, self):
-        return 'import {}'.format(', '.join(map(str, self.names)))
+        return 'import {}'.format(
+            ', '.join(i.asPython() for i in self.names))
 
 class ImportFrom(ast.ImportFrom):
     def asPython(self):
         return 'from {} import {}'.format(
-            self.module, ', '.join(map(str, self.names)))
+            self.module,
+            ', '.join(i.asPython() for i in self.names))
 
 class block(stmt):
     pass
@@ -92,11 +101,12 @@ class If(ast.If):
     defaults={'orelse': []}
     def asPython(block, self, indent=1):
         body = 'if {}:\n{}'.format( 
-            self.test, bodyfmt(self.body, indent))
+            self.test.asPython(),
+            bodyfmt(self.body, indent))
         e = self.orelse
         if e:
             if len(e) == 1 and isinstance(e[0], ast.If):
-                body += '\nel' + str(e[0])
+                body += '\nel' + e[0].asPython()
             else:
                 body += '\nelse:\n{}'.format(
                     bodyfmt(e, indent))
@@ -111,7 +121,9 @@ class for_(block):
     defaults = {'orelse': []}
     def asPython(self, indent=1):
         body = '{} {} in {}:\n{}'.format(
-            self.symbol, self.target, self.iter,
+            self.symbol,
+            self.target.asPython(),
+            self.iter.asPython(),
             bodyfmt(self.body, indent))
         if self.orelse:
             body += '\nelse:\n{}'.format(
@@ -126,7 +138,7 @@ class AsyncFor(for_, asyncblock, ast.AsyncFor):
 class with_(block):
     def asPython(self, indent=1):
         return 'with {}:\n{}'.format(
-            ', '.join(map(str, self.items)),
+            ', '.join(i.asPython() for i in self.items),
             bodyfmt(self.body, indent))
 
 class With(with_, ast.With):
@@ -139,15 +151,16 @@ class definition(block):
 
 class function(definition):
     def asPython(self, indent=1):
-        decorators = list(map('@{}'.format, self.decorator_list))
-        if decorators:
-            decorators.append('')
+        dec = '\n'.join(
+            '@' + i.asPython() for i in self.decorator_list)
+        if dec:
+            dec += '\n'
         returns = ''
         if self.returns:
-            returns = ' -> ' + str(self.returns)
+            returns = ' -> ' + self.returns.asPython()
         return '{}{} {}({}){}:\n{}'.format(
-            '\n'.join(decorators), self.symbol, self.name,
-            self.args, returns,
+            dec, self.symbol, self.name,
+            self.args.asPython(), returns,
             bodyfmt(self.body, indent))
 
 class FunctionDef(function, ast.FunctionDef):
@@ -158,24 +171,26 @@ class AsyncFunctionDef(function, asyncblock, ast.AsyncFunctionDef):
 
 class ClassDef(block, ast.ClassDef):
     def asPython(self, indent=1):
-        decorators = list(map(str, self.decorator_list))
-        if decorators:
-            decorators.append('')
-        p = ', '.join(map(str, self.bases + self.keywords))
+        dec = '\n'.join(
+            '@' + i.asPython() for i in self.decorator_list)
+        if dec:
+            dec += '\n'
+        p = ', '.join(
+            i.asPython() for i in self.bases + self.keywords)
         if p:
             p = '('+p+')'
             
         return '{}class {}{}:\n{}'.format(
-            '\n'.join(decorators), self.name, p,
+            dec, self.name, p,
             bodyfmt(self.body, indent))
 
 class ExceptHandler(datanode, ast.ExceptHandler):
     def asPython(self, indent=1):
         n = 'except'
         if self.type:
-            n += ' ' + str(self.type)
+            n += ' ' + self.type.asPython()
         if self.name:
-            n += ' as ' + str(self.name)
+            n += ' as ' + self.name.asPython()
         
         return '{}:\n{}'.format(n, bodyfmt(self.body, indent))
 

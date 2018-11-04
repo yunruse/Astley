@@ -24,6 +24,17 @@ def modify(node):
 
 DFIELDS = ('lineno', 'col_offset')
 
+class CodeDisplay:
+    def __init__(self, node):
+        self._node = node
+    
+    def __getattr__(self, attr):
+        item = getattr(self._node, attr, None)
+        if isinstance(item, Node):
+            return item.asPython()
+        else:
+            return item
+
 class Node:
     defaults = dict()
     sym = '<{self.__class__.__name__}>'
@@ -81,7 +92,7 @@ class Node:
         return Node._repr(self, False)
 
     def asPython(self, indent=1):
-        return self.sym.format(self=self)
+        return self.sym.format(self=CodeDisplay(self))
 
     def compile(self, filename=None):
         '''Return compiled code version of node.'''
@@ -89,6 +100,7 @@ class Node:
 
     def eval(self, globa=None, loca=None):
         '''Evaluate node given globals and locals.'''
+        print('eval:', repr(self))
         return eval(
             self.compile(),
             globa or globals(), loca or dict())
