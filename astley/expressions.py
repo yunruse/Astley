@@ -111,7 +111,7 @@ class JoinedStr(expr, ast.JoinedStr):
             i.s if isinstance(i, Str) else str(i)
             for i in self.values)
     
-    def __str__(self):
+    def asPython(self):
         return 'f' + repr(self.asRaw())
 
 @all
@@ -123,7 +123,7 @@ class Attribute(expr, ast.Attribute):
 @all
 class Call(expr, ast.Call):
     defaults = {'keywords': [], 'args': []}
-    def __str__(self):
+    def asPython(self):
         return '{}({})'.format(self.func, ', '.join(
             map(str, self.args + self.keywords)))
 
@@ -135,7 +135,7 @@ class functionKind:
     pass
 @all
 class Lambda(functionKind, expr, ast.Lambda):
-    def __str__(self):
+    def asPython(self):
         return 'lambda {}: {}'.format(self.args, self.body)
 
 # Iterables
@@ -146,12 +146,12 @@ class iter(expr):
 
 @all
 class List(iter, ast.List):
-    def __str__(self):
+    def asPython(self):
         return '[{}]'.format(', '.join(map(str, self.elts)))
 @all
 class Tuple(iter, ast.Tuple):
     defaults = {'ctx': load}
-    def __str__(self):
+    def asPython(self):
         elts = self.elts
         if len(elts) == 1:
             elts = (*elts, '')
@@ -161,13 +161,13 @@ class Tuple(iter, ast.Tuple):
             return '()'
 @all
 class Dict(iter, ast.Dict):
-    def __str__(self):
+    def asPython(self):
         return '{{{}}}'.format(', '.join(
             '{}: {}'.format(k, v) for k, v
             in zip(self.keys, self.values)))
 @all
 class Set(iter, ast.Set):
-    def __str__(self):
+    def asPython(self):
         if self.elts:
             return '{{{}}}'.format(', '.join(map(str, self.elts)))
         else:
@@ -210,7 +210,7 @@ requiresParentheses = (
 @all
 class BinOp(OpApplier, ast.BinOp):
     '''Binary infix operator (+, -, and, etc) '''
-    def __str__(self):
+    def asPython(self):
         # Add brackets to ensure cases such as '(a + b) * c' are represented well
         left, right = str(self.left), str(self.right)
         pm = ops.precedence[self.op.__class__.__name__]
@@ -231,7 +231,7 @@ class BinOp(OpApplier, ast.BinOp):
 @all
 class BoolOp(OpApplier, ast.BoolOp):
     '''Binary infix operator that works on booleans (and, or)'''
-    def __str__(self):
+    def asPython(self):
         values = list(map(str, self.values))
         # try to map 'A and (B or C)' nicely
         if isinstance(self.op, ast.Or):
@@ -265,7 +265,7 @@ class UnaryOp(OpApplier, ast.UnaryOp):
 class Compare(OpApplier, ast.Compare):
     '''Chain of comparators.'''
     _fields = 'left ops comparators'.split()
-    def __str__(self):
+    def asPython(self):
         chain = map(
             '{0[0]} {0[1]}'.format,
             zip(self.ops, self.comparators))

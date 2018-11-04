@@ -14,7 +14,7 @@ class Expression(ast.Expression, BaseNode):
         return compile(fix(self), filename, 'eval')
 
 class Module(ast.Module, BaseNode):
-    def __str__(self, index=0):
+    def asPython(self, index=0):
         return '\n'.join(
             '   ' * index + str(stmt) for stmt in self.body)
     def compile(self, filename='<unknown>'):

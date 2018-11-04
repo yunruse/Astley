@@ -75,9 +75,12 @@ class Node:
             self.__class__.__name__, ', '.join(attributes))
 
     def __repr__(self):
-        return self._repr(False)
+        return Node._repr(self, True)
+    
+    def __str__(self):
+        return Node._repr(self, False)
 
-    def __str__(self, indent=1):
+    def asPython(self, indent=1):
         return self.sym.format(self=self)
 
     def compile(self, filename=None):

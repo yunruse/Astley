@@ -6,7 +6,7 @@ class Starred(ast.Starred, datanode):
 
 class keyword(ast.keyword, datanode):
     '''Keyword in Call'''
-    def __str__(self):
+    def asPython(self):
         arg = getattr(self, 'arg', None)
         if arg:
             return '{}={}'.format(arg, self.value)
@@ -20,7 +20,7 @@ class arg(ast.arg, datanode):
 class arguments(ast.arguments, datanode):
     '''Function signature in Lambda, FunctionDef'''
     _fields = tuple('args defaults vararg kwonlyargs kw_defaults kwarg'.split())
-    def __str__(self):
+    def asPython(self):
         argDefaults = getattr(self, 'defaults', [])
         kwDefaults = getattr(self, 'kw_defaults', [])
         argRest = getattr(self, 'vararg', None)
@@ -33,7 +33,7 @@ class arguments(ast.arguments, datanode):
 class alias(ast.alias, datanode):
     '''used in import, extended with withitem'''
     vars = 'name asname'.split()
-    def __str__(self):
+    def asPython(self):
         name, alias = (getattr(self, i, None) for i in self.vars)
         if alias:
             return '{} as {}'.format(name, alias)
@@ -48,7 +48,7 @@ class withitem(ast.alias):
 
 class FormattedValue(ast.FormattedValue, datanode):
     '''String and formatting used in f-string'''
-    def __str__(self):
+    def asPython(self):
         n = str(self.value)
         if self.format_spec:
             n += ':' + str(self.format_spec.asRaw())
@@ -56,7 +56,7 @@ class FormattedValue(ast.FormattedValue, datanode):
 
 class comprehension(ast.comprehension, datanode):
     '''Iterator and targets in comprehenson expressions'''
-    def __str__(self):
+    def asPython(self):
         name = 'for {} in {}'
         if self.is_async:
             name = 'async ' + name
@@ -69,7 +69,7 @@ class Index(ast.Index, slice):
     sym = '{self.value}'
 
 class Slice(ast.Slice, slice):
-    def __str__(self):
+    def asPython(self):
         lower = str(self.lower) if self.lower else ''
         upper = str(self.upper) if self.upper else ''
         if self.step:
