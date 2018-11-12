@@ -29,7 +29,7 @@ class CodeDisplay:
         item = getattr(self._node, attr, None)
         if isinstance(item, Node):
             return item.asPython()
-        else:
+        elif item is not None:
             return item
         else:
             return ""
