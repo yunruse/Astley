@@ -2,18 +2,14 @@ import _ast
 
 from .nodes import Node
 
-
-class datanode(Node):
+class Datanode(Node):
     '''Subsidiary data node.'''
 
-
-class Starred(_ast.Starred, datanode):
+class Starred(_ast.Starred, Datanode):
     sym = "*{self.value}"
 
-
-class keyword(_ast.keyword, datanode):
-    """Keyword used in a Call"""
-
+class keyword(_ast.keyword, Datanode):
+    """Keyword used in a Call."""
     def asPython(self):
         arg = getattr(self, "arg", None)
         if arg:
@@ -21,31 +17,28 @@ class keyword(_ast.keyword, datanode):
         else:
             return "**{}".format(self.value)
 
-
-class alias(_ast.alias, datanode):
-    """used in import, extended with withitem"""
-
-    defaults = {"asname": None}
-    vars = "name asname".split()
-
+class Alias(Datanode):
     def asPython(self):
-        name, alias = (getattr(self, i, None) for i in self.vars)
+        name, alias = (getattr(self, i, None) for i in self._fields)
         name = name.asPython()
         if alias:
             return name + " as " + alias.asPython()
         else:
             return name
 
+class alias(_ast.alias, Alias):
+    """Aliases in an import"""
+    _fields = "name asname".split()
+    defaults = {"asname": None}
 
-class withitem(_ast.alias):
-    """Aliases in With block"""
-
+class withitem(_ast.withitem, Alias):
+    """Aliases in a With block"""
+    _fields = "context_expr optional_vars".split()
     defaults = {"optional_vars": None}
 
-
-class FormattedValue(_ast.FormattedValue, datanode):
+class FormattedValue(_ast.FormattedValue, Datanode):
     """String and formatting used in f-string"""
-
+    _fields = 'value format_spec'.split()
     def asPython(self):
         n, fs = (getattr(self, i, None) for i in self._fields)
         n = n.asPython()
@@ -53,20 +46,17 @@ class FormattedValue(_ast.FormattedValue, datanode):
             n += ":" + str(fs.asRaw())
         return "{" + n + "}"
 
-
-class comprehension(_ast.comprehension, datanode):
+class comprehension(_ast.comprehension, Datanode):
     """Iterator and targets in comprehenson expressions"""
+    sym = "{self._async}for {self.target} in {self.iter}"
     _async = property(lambda s: "async " * getattr(s, 'is_async', False))
 
-    sym = "{self.async_}for {self.target} in {self.iter}"
-class sliceKind(datanode):
+class SliceKind(Datanode):
     pass
 
-
-class Index(_ast.Index, sliceKind):
+class Index(_ast.Index, SliceKind):
     sym = "{self.value}"
 
-
-class Slice(_ast.Slice, sliceKind):
-    def asPython(self):
+class Slice(_ast.Slice, SliceKind):
     sym = "{self.lo}:{self.hi}{self._step}"
+    _step = property(lambda s: ":" + s.step if hasattr(s, 'step') else '')

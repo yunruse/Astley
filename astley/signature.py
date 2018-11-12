@@ -2,15 +2,15 @@
 
 import _ast
 
-from .datanodes import datanode
+from .datanodes import Datanode
 
 __all__ = 'arg arguments funcSignature'.split()
 
-class arg(_ast.arg, datanode):
+class arg(_ast.arg, Datanode):
     """Name and optional annotation."""
     _fields = 'arg annotation'.split()
 
-class arguments(_ast.arguments, datanode):
+class arguments(_ast.arguments, Datanode):
     """Function argument signature"""
 
     _fields = "args defaults vararg kwonlyargs kw_defaults kwarg".split()

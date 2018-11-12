@@ -5,38 +5,38 @@ import _ast
 from .nodes import kind
 from .expressions import expr
 
-__all__ = (
-    'Op', 'boolop', 'cmpop', 'operator', 'unaryop',
+__all__ = [
+    'OpKind', 'boolop', 'cmpop', 'operator', 'unaryop',
     'OpApplier', 'BoolOp', 'Compare', 'BinOp', 'UnaryOp',
     'operators', 'precedence',
-)
+]
 
-class Op(kind):
-    '''Operator.'''
+class OpKind(kind):
+    """Operator kind."""
 
-class boolop(_ast.boolop, Op):
+class boolop(_ast.boolop, OpKind):
     def __new__(cls, values=None):
         self = super().__new__(cls)
         if values:
             self = UnaryOp(op=self, values=values)
         return self
 
-class cmpop(_ast.cmpop, Op):
+class cmpop(_ast.cmpop, OpKind):
     def __new__(cls, left=None, *comparators):
         self = super().__new__(cls)
-        if left and right:
+        if left and comparators:
             self = Compare(
                 ops=[self] * len(comparators), left=left, comparators=comparators)
         return self
 
-class operator(_ast.operator, Op):
+class operator(_ast.operator, OpKind):
     def __new__(cls, left=None, right=None):
         self = super().__new__(cls)
         if left and right:
             self = BinOp(op=self, left=left, right=right)
         return self
 
-class unaryop(_ast.unaryop, Op):
+class unaryop(_ast.unaryop, OpKind):
     def __new__(cls, operand=None):
         self = super().__new__(cls)
         if operand:
@@ -93,7 +93,7 @@ for opKind, ops in operators.items():
 
         exec('class {0}(_ast.{0}, {2}): symbol = "{1}"'.format(
              nodeName, symbol, opKind), globals())
-        __all__ += (nodeName, )
+        __all__.append(nodeName)
 
 
 class OpApplier(expr):
@@ -155,7 +155,7 @@ class Compare(OpApplier, _ast.Compare):
         self.ops.append(operator)
         self.comparators.append(other)
         return self
-    
+
     __eq__ = lambda s, o: s._op(o, Eq)
     __ne__ = lambda s, o: s._op(o, NotEq)
     __lt__ = lambda s, o: s._op(o, Lt)

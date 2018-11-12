@@ -142,16 +142,16 @@ class Lambda(functionKind, expr, _ast.Lambda):
 # Iterables
 
 @all
-class iter(expr):
+class Iterable(expr):
     @property
     def _elts(self):
         return ', '.join(i.asPython() for i in self.elts)
 
 @all
-class List(iter, _ast.List):
+class List(Iterable, _ast.List):
     sym = '[{self._elts}]'
 @all
-class Tuple(iter, _ast.Tuple):
+class Tuple(Iterable, _ast.Tuple):
     _defaults = {'ctx': load}
     def asPython(self):
         elts = self.elts
@@ -162,34 +162,34 @@ class Tuple(iter, _ast.Tuple):
         else:
             return '()'
 @all
-class Dict(iter, _ast.Dict):
+class Dict(Iterable, _ast.Dict):
     def asPython(self):
         return '{{{}}}'.format(', '.join(
             k.asPython() + ': ' + v.asPython()
             for k, v in zip(self.keys, self.values)))
 @all
-class Set(iter, _ast.Set):
+class Set(Iterable, _ast.Set):
     def asPython(self):
         if self.elts:
             return '{{{}}}'.format(self._elts)
         else:
             return 'set()'
 @all
-class comp(expr):
+class Comprehension(expr):
     '''Iterable comprehension'''
     sym = '{self.elt} {self.elements}'
     elements = property(lambda s: ' '.join(
         i.asPython() for i in s.generators))
 
 @all
-class GeneratorExp(comp, _ast.GeneratorExp):
+class GeneratorExp(Comprehension, _ast.GeneratorExp):
     pass
 @all
-class SetComp(comp, _ast.SetComp):
+class SetComp(Comprehension, _ast.SetComp):
     sym = '{{{self.elt} {self.elements}}}'
 @all
-class ListComp(comp, _ast.ListComp):
+class ListComp(Comprehension, _ast.ListComp):
     sym = '[{self.elt} {self.elements}]'
 @all
-class DictComp(comp, _ast.DictComp):
+class DictComp(Comprehension, _ast.DictComp):
     sym = '{{{self.key}: {self.value} {self.elements}}}'
