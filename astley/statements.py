@@ -221,12 +221,15 @@ class ExceptHandler(datanode, _ast.ExceptHandler):
         return '{}:\n{}'.format(n, bodyfmt(self.body, indent))
 
 class Try(block, _ast.Try):
+    _fields = 'body handlers orelse finalbody'.split()
+    _defaults = {'orelse': [], 'finalbody': []}
     def asPython(self, indent=1):
         body = 'try:\n' + bodyfmt(self.body, indent)
         body += '\n' + '\n'.join(
             i.asPython(indent) for i in self.handlers)
-        if self.orelse:
-            body += '\nelse:\n' + bodyfmt(self.orelse, indent)
-        if self.finalbody:
-            body += '\nfinally:\n' + bodyfmt(self.finalbody, indent)
+        e, f = getattr(self, 'orelse', None), getattr(self, 'finalbody', None)
+        if e:
+            body += '\nelse:\n' + bodyfmt(e, indent)
+        if f:
+            body += '\nfinally:\n' + bodyfmt(f, indent)
         return body

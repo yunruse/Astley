@@ -41,26 +41,24 @@ class withitem(_ast.alias):
     """Aliases in With block"""
 
     defaults = {"optional_vars": None}
-    vars = "context_expr optional_vars".split()
 
 
 class FormattedValue(_ast.FormattedValue, datanode):
     """String and formatting used in f-string"""
 
     def asPython(self):
-        n = self.value.asPython()
-        if self.format_spec:
-            n += ":" + str(self.format_spec.asRaw())
+        n, fs = (getattr(self, i, None) for i in self._fields)
+        n = n.asPython()
+        if fs:
+            n += ":" + str(fs.asRaw())
         return "{" + n + "}"
 
 
 class comprehension(_ast.comprehension, datanode):
     """Iterator and targets in comprehenson expressions"""
+    _async = property(lambda s: "async " * getattr(s, 'is_async', False))
 
     sym = "{self.async_}for {self.target} in {self.iter}"
-    async_ = property(lambda s: "async " * s.is_async)
-
-
 class sliceKind(datanode):
     pass
 
@@ -71,9 +69,4 @@ class Index(_ast.Index, sliceKind):
 
 class Slice(_ast.Slice, sliceKind):
     def asPython(self):
-        lo = self.lower.asPython() if self.lower else ""
-        hi = self.upper.asPython() if self.upper else ""
-        if self.step:
-            return "{}:{}:{}".format(lo, hi, self.step.asPython())
-        else:
-            return "{}:{}".format(lo, hi)
+    sym = "{self.lo}:{self.hi}{self._step}"
