@@ -10,13 +10,13 @@ from .nodes import Node, functionKind, Expression, load, store
 from .datanodes import keyword
 from .signature import arguments
 
-__all__ = []
+__all__ = '''\
+expr Expr Name NameS NameConstant Constant \
+Num Ellipsis Str Bytes JoinedStr \
+Subscript Attribute Call IfExp Lambda \
+Iterable List Tuple Dict Set \
+'''.split()
 
-def all(obj):
-    __all__.append(obj.__name__)
-    return obj
-
-@all
 class expr(Node):
     '''Expression node - subclasses may be eval'd'''
     def compile(self, filename='<unknown>'):
@@ -65,42 +65,32 @@ for opKind, operators in ops.operators.items():
                 rname = fname.replace('__', '__r', 1)
                 setattr(expr, rname, method)
 
-@all
 class Expr(expr, _ast.Expr):
     '''Expression that may be used in a Module'''
     sym = '{self.value}'
     def compile(self, filename='<unknown>'):
         return self.value.compile(filename)
 
-@all
 class Name(expr, _ast.Name):
     _defaults = {'ctx': load}
     sym = '{self.id}'
 
-@all
 class NameS(Name):
     _defaults = {'ctx': store}
-@all
 class NameConstant(expr, _ast.NameConstant):
     sym = '{self.value}'
-@all
 class Constant(expr, _ast.Constant):
     sym = '{self.value}'
-@all
 class Num(expr, _ast.Num):
     sym = '{self.n}'
-@all
 class Ellipsis(expr, _ast.Ellipsis):
     sym = '...'
 
-@all
 class Str(expr, _ast.Str):
     sym = '{self.s!r}'
-@all
 class Bytes(expr, _ast.Bytes):
     sym = '{self.s!r}'
 
-@all
 class JoinedStr(expr, _ast.JoinedStr):
     def asRaw(self):
         return ''.join(
@@ -110,13 +100,10 @@ class JoinedStr(expr, _ast.JoinedStr):
     def asPython(self):
         return 'f' + repr(self.asRaw())
 
-@all
 class Subscript(expr, _ast.Subscript):
     sym = '{self.value}[{self.slice}]'
-@all
 class Attribute(expr, _ast.Attribute):
     sym = '{self.value}.{self.attr}'
-@all
 class Call(expr, _ast.Call):
     _defaults = {'keywords': [], 'args': []}
     def asPython(self):
@@ -124,10 +111,8 @@ class Call(expr, _ast.Call):
             self.func.asPython(), ', '.join(
                 i.asPython() for i in self.args + self.keywords))
 
-@all
 class IfExp(expr, _ast.IfExp):
     sym = '{self.body} if {self.test} else {self.orelse}'
-@all
 class Lambda(functionKind, expr, _ast.Lambda):
     sym = 'lambda {self.args}: {self.body}'
 
@@ -141,16 +126,13 @@ class Lambda(functionKind, expr, _ast.Lambda):
 
 # Iterables
 
-@all
 class Iterable(expr):
     @property
     def _elts(self):
         return ', '.join(i.asPython() for i in self.elts)
 
-@all
 class List(Iterable, _ast.List):
     sym = '[{self._elts}]'
-@all
 class Tuple(Iterable, _ast.Tuple):
     _defaults = {'ctx': load}
     def asPython(self):
@@ -161,35 +143,28 @@ class Tuple(Iterable, _ast.Tuple):
             return self._elts
         else:
             return '()'
-@all
 class Dict(Iterable, _ast.Dict):
     def asPython(self):
         return '{{{}}}'.format(', '.join(
             k.asPython() + ': ' + v.asPython()
             for k, v in zip(self.keys, self.values)))
-@all
 class Set(Iterable, _ast.Set):
     def asPython(self):
         if self.elts:
             return '{{{}}}'.format(self._elts)
         else:
             return 'set()'
-@all
 class Comprehension(expr):
     '''Iterable comprehension'''
     sym = '{self.elt} {self.elements}'
     elements = property(lambda s: ' '.join(
         i.asPython() for i in s.generators))
 
-@all
 class GeneratorExp(Comprehension, _ast.GeneratorExp):
     pass
-@all
 class SetComp(Comprehension, _ast.SetComp):
     sym = '{{{self.elt} {self.elements}}}'
-@all
 class ListComp(Comprehension, _ast.ListComp):
     sym = '[{self.elt} {self.elements}]'
-@all
 class DictComp(Comprehension, _ast.DictComp):
     sym = '{{{self.key}: {self.value} {self.elements}}}'
