@@ -25,7 +25,4 @@ from .node import *
 from .nodes import *
 from .transformer import *
 
-def copy(old_node, new_node):
-    return copy_location(new_node, old_node)
-
 AST = Node

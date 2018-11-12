@@ -2,11 +2,18 @@
 
 from _ast import AST
 
-__all__ = "parse Node".split()
+__all__ = "copy parse Node".split()
+
+def copy(old_node, new_node):
+    old_attr = getattr(old_node, '_attributes', None)
+    new_attr = getattr(new_node, '_attributes', None)
+    if old_attr and new_attr:
+        for i in old_attr:
+            if i in new_attr and not hasattr(new_node, i):
+                setattr(new_node, i, getattr(old_node, i))
+    return new_node
 
 DFIELDS = ("lineno", "col_offset")
-
-
 PyCF_ONLY_AST = 1024
 
 def parse(source, filename="<unknown>", mode="exec"):

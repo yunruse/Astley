@@ -1,8 +1,8 @@
 '''Statements that may only be exec'd'''
 
 import _ast
-from ast import copy_location
 
+from .node import copy
 from .nodes import Node, Module
 from .datanodes import datanode
 from .signature import arguments
@@ -10,7 +10,7 @@ from .signature import arguments
 class stmt(Node):
     '''Statement node - subclasses may be exec'd'''
     def compile(self, filename='<unknown>'):
-        module = copy_location(Module(body=[self]), self)
+        module = copy(self, Module(body=[self]))
         return module.compile(filename)
 
 class assign(stmt):
