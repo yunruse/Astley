@@ -1,9 +1,4 @@
-"""Astley, thextension to Abstract Syntax Tree.
-
-100% feature-complete extension of AST, featuring a
-WIP AST-to-code translator, useful base classes,
-and an extended NodeTransformer.
-"""
+"""Astley, the extension to Python's Abstract Syntax Tree."""
 
 # flake8: noqa
 
