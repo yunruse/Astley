@@ -1,64 +1,88 @@
-'''Method for displaying a function signature.'''
+'''Function arguments and their derivation.'''
 
-def reprSignature(args, argDefaults, argRest, kwArgs, kwDefaults, kwRest, *a, **q):
-    n_required = len(args) - len(argDefaults)
-    words = []
-    
-    def argify(variables, defaults, isKwargsOnly):
-        for n, (name, ann) in enumerate(variables):
+import _ast
 
-            defa = None
-            
-            if isKwargsOnly:
-                defa = defaults[n]
-            elif defaults:
-                # __defaults__ applies to the tail of the variables
-                dindex = n - n_required
-                if dindex >= 0:
-                    defa = defaults[dindex]
-            
-            isAnnotated = ann and ann != 'object'
+from .datanodes import datanode
 
-            if isAnnotated and defa:
-                words.append('{}: {} = {}'.format(name, ann, defa))
-            elif isAnnotated:
-                words.append('{}: {}'.format(name, ann))
-            elif defa:
-                words.append('{}={}'.format(name, defa))
-            else:
-                words.append(name)
+__all__ = 'arg arguments funcSignature'.split()
 
-    argify(args, argDefaults, False)
-    
-    if argRest:
-        words.append('*' + str(argRest))
-    elif kwArgs:
-        words.append('*')
+class arg(_ast.arg, datanode):
+    """Name and optional annotation."""
+    _fields = 'arg annotation'.split()
 
-    argify(kwArgs, kwDefaults, True)
+class arguments(_ast.arguments, datanode):
+    """Function argument signature"""
 
-    if kwRest:
-        words.append('**' + str(kwRest))
+    _fields = "args defaults vararg kwonlyargs kw_defaults kwarg".split()
+    _defaults = dict(
+        args=[], defaults=[], vararg=None,
+        kwonlyargs=[], kw_defaults=[], kwarg=None
+    )
 
-    return ', '.join(words)
+    def asPython(self):
+        n_required = len(self.args) - len(self.defaults)
+        words = []
+
+        def argify(variables, defaults, isKwargsOnly):
+            for n, arg in enumerate(variables):
+
+                defa = None
+                if isKwargsOnly:
+                    defa = defaults[n]
+                elif defaults:
+                    # __defaults__ applies to the tail of the variables
+                    dindex = n - n_required
+                    if dindex >= 0:
+                        defa = defaults[dindex]
+
+                word = arg.arg
+                ann = getattr(arg, "annotation", None)
+
+                if ann is not None:
+                    word += ': {}'.format(ann)
+                    if defa is not None:
+                        word += ' = {}'.format(defa)
+                else:
+                    if defa is not None:
+                        word += '={}'.format(defa)
+
+                words.append(word)
+
+        argify(self.args, self.defaults, False)
+
+        if self.vararg:
+            words.append('*' + str(self.vararg))
+        elif self.kwonlyargs:
+            words.append('*')
+
+        argify(self.kwonlyargs, self.kw_defaults, True)
+
+        if self.kwarg:
+            words.append('**' + str(self.kwarg))
+
+        return ', '.join(words)
+
+    @classmethod
+    def fromFunction(cls, f):
+        '''Extract signature from compiled function.'''
+        c = f.__code__
+        n = c.co_argcount
+        n_k = c.co_kwonlyargcount
+
+        hasKwargs = (c.co_flags & 0b0001000) >> 3
+        hasArgs = (c.co_flags & 0b0000100) >> 2
+
+        def args(q):
+            return [arg(name, f.__annotations__.get(name, None)) for name in q]
+
+        return cls(
+            args = args(c.co_varnames[:n]),
+            defaults = f.__defaults__ or tuple(),
+            vararg = c.co_varnames[n + 1] if hasArgs else None,
+            kwonlyargs = args(c.co_varnames[n : n+n_k]),
+            kw_defaults = f.__kwdefaults__ or tuple(),
+            kwarg = c.co_varnames[n + 1 + hasArgs] if hasKwargs else None
+        )
 
 def funcSignature(f):
-    '''Return arguments from compiled function.'''
-    c = f.__code__
-    n = c.co_argcount
-    n_k = c.co_kwonlyargcount
-    
-    hasKwargs = (c.co_flags & 0b0001000) >> 3
-    hasArgs = (c.co_flags & 0b0000100) >> 2
-    
-    notate = lambda q: [(name, f.__annotations__.get(name, object).__name__) for name in q]
-    args = notate(c.co_varnames[:n])
-    kwArgs = notate(c.co_varnames[n:n+n_k])
-    
-    argRest = c.co_varnames[n+1] if hasArgs else None
-    kwRest = c.co_varnames[n+1+hasArgs] if hasKwargs else None
-    
-    argDefaults = f.__defaults__ or tuple()
-    kwDefaults = f.__kwdefaults__ or tuple()
-
-    return reprSignature(args, argDefaults, argRest, kwArgs, kwDefaults, kwRest)
+    return arguments.fromFunction(f).asPython()

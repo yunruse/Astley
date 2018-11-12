@@ -1,29 +1,33 @@
 '''Statements that may only be exec'd'''
 
-from .nodes import *
-from .helpers import copyfix
+import _ast
+from ast import copy_location
+
+from .nodes import Node, Module
+from .datanodes import datanode
+from .signature import arguments
 
 class stmt(Node):
     '''Statement node - subclasses may be exec'd'''
     def compile(self, filename='<unknown>'):
-        module = copyfix(self, Module(body=[self]))
+        module = copy_location(Module(body=[self]), self)
         return module.compile(filename)
 
 class assign(stmt):
     '''Base class for assignment statements'''
 
-class Assign(assign, ast.Assign):
+class Assign(assign, _ast.Assign):
     '''Assignment of value(s)'''
     def asPython(self):
         return '{} = {}'.format(
             ', '.join(i.asPython() for i in self.targets),
             self.value)
 
-class AugAssign(assign, ast.AugAssign):
+class AugAssign(assign, _ast.AugAssign):
     '''Augmented in-place assignment (eg +=)'''
     sym='{self.target} {self.op}= {self.value}'
 
-class AnnAssign(assign, ast.AnnAssign):
+class AnnAssign(assign, _ast.AnnAssign):
     '''Single-value type-annotated assignment'''
     def asPython(self):
         value = getattr(self, 'value', None)
@@ -45,16 +49,16 @@ class oneliner(stmt):
         else:
             return sym
 
-class Return(ast.Return): sym='return'
-class Delete(oneliner, ast.Delete): sym='del'
-class Raise(oneliner, ast.Raise): sym='raise'
-class Await(oneliner, ast.Yield): sym='await'
-class Yield(oneliner, ast.Yield): sym='yield'
-class YieldFrom(oneliner, ast.YieldFrom): sym='yield from'
-class Global(oneliner, ast.Global): sym='global'
-class Nonlocal(oneliner, ast.Nonlocal): sym='nonlocal'
+class Return(_ast.Return): sym='return'
+class Delete(oneliner, _ast.Delete): sym='del'
+class Raise(oneliner, _ast.Raise): sym='raise'
+class Await(oneliner, _ast.Yield): sym='await'
+class Yield(oneliner, _ast.Yield): sym='yield'
+class YieldFrom(oneliner, _ast.YieldFrom): sym='yield from'
+class Global(oneliner, _ast.Global): sym='global'
+class Nonlocal(oneliner, _ast.Nonlocal): sym='nonlocal'
 
-class Assert(oneliner, ast.Assert):
+class Assert(oneliner, _ast.Assert):
     def asPython(self):
         code = 'assert ' + self.test.asPython()
         msg = getattr(self, 'msg', None)
@@ -66,19 +70,19 @@ class Assert(oneliner, ast.Assert):
 class word(oneliner):
     '''Base class: Single-word statements.'''
 
-class Pass(word, ast.Pass): sym='pass'
-class Continue(word, ast.Continue): sym='continue'
-class Break(word, ast.Break): sym='break'
+class Pass(word, _ast.Pass): sym='pass'
+class Continue(word, _ast.Continue): sym='continue'
+class Break(word, _ast.Break): sym='break'
 
 class import_(stmt):
     '''Base: Statement that imports.'''
 
-class Import(ast.Import):
-    def asPython(import_, self):
+class Import(import_, _ast.Import):
+    def asPython(self):
         return 'import {}'.format(
             ', '.join(i.asPython() for i in self.names))
 
-class ImportFrom(ast.ImportFrom):
+class ImportFrom(import_, _ast.ImportFrom):
     def asPython(self):
         return 'from {} import {}'.format(
             self.module,
@@ -92,33 +96,32 @@ class asyncblock(block):
 
 def bodyfmt(body, indent=1):
     return '\n'.join(
-        ' '*4*indent +
-            (i.asPython(indent+1) if isinstance(i, block)
-             else i.asPython())
+        ' ' * 4 * indent + (i.asPython(indent + 1)
+        if isinstance(i, block) else i.asPython())
         for i in body)
 
-class If(ast.If):
-    defaults={'orelse': []}
-    def asPython(block, self, indent=1):
-        body = 'if {}:\n{}'.format( 
+class If(_ast.If):
+    _defaults = {'orelse': []}
+    def asPython(self, indent=1):
+        body = 'if {}:\n{}'.format(
             self.test.asPython(),
             bodyfmt(self.body, indent))
         e = self.orelse
         if e:
-            if len(e) == 1 and isinstance(e[0], ast.If):
+            if len(e) == 1 and isinstance(e[0], _ast.If):
                 body += '\nel' + e[0].asPython()
             else:
                 body += '\nelse:\n{}'.format(
                     bodyfmt(e, indent))
         return body
 
-class While(ast.While):
-    def asPython(block, self, indent=1):
-        return 'while {}:\n{}'.format( 
+class While(_ast.While):
+    def asPython(self, indent=1):
+        return 'while {}:\n{}'.format(
             self.test, bodyfmt(self.body, indent))
 
 class for_(block):
-    defaults = {'orelse': []}
+    _defaults = {'orelse': []}
     def asPython(self, indent=1):
         body = '{} {} in {}:\n{}'.format(
             self.symbol,
@@ -130,9 +133,9 @@ class for_(block):
                 bodyfmt(self.orelse, indent))
         return body
 
-class For(for_, ast.For):
+class For(for_, _ast.For):
     symbol = 'for'
-class AsyncFor(for_, asyncblock, ast.AsyncFor):
+class AsyncFor(for_, asyncblock, _ast.AsyncFor):
     symbol = 'async for'
 
 class with_(block):
@@ -141,15 +144,37 @@ class with_(block):
             ', '.join(i.asPython() for i in self.items),
             bodyfmt(self.body, indent))
 
-class With(with_, ast.With):
+class With(with_, _ast.With):
     symbol='with'
-class AsyncWith(with_, asyncblock, ast.AsyncWith):
+class AsyncWith(with_, asyncblock, _ast.AsyncWith):
     symbol='async with'
 
 class definition(block):
     pass
 
 class function(definition):
+    _fields = 'name args body decorator_list returns'.split()
+
+    @classmethod
+    def withBody(cls, body, **kwargs):
+        '''Decorator to inherit a real Python function's properties.
+
+        Use as:
+        @withBody(Return(Name('a') + Name('b'))):
+        def add(a, b=2): ...
+        '''
+        def wrapper(func):
+            kw = kwargs.copy()
+            if hasattr(func, '__name__'):
+                kw.setdefault('name', func.__name__)
+            if hasattr(func, '__annotations__'):
+                an = func.__annotations__
+                if 'return' in an:
+                    kw.setdefault('returns', an['return'])
+            kw.setdefault('args', arguments.fromFunction(func))
+            return cls(**kw)
+        return wrapper
+
     def asPython(self, indent=1):
         dec = '\n'.join(
             '@' + i.asPython() for i in self.decorator_list)
@@ -163,13 +188,13 @@ class function(definition):
             self.args.asPython(), returns,
             bodyfmt(self.body, indent))
 
-class FunctionDef(function, ast.FunctionDef):
+class FunctionDef(function, _ast.FunctionDef):
     symbol = 'def'
 
-class AsyncFunctionDef(function, asyncblock, ast.AsyncFunctionDef):
+class AsyncFunctionDef(function, asyncblock, _ast.AsyncFunctionDef):
     symbol = 'async def'
 
-class ClassDef(block, ast.ClassDef):
+class ClassDef(block, _ast.ClassDef):
     def asPython(self, indent=1):
         dec = '\n'.join(
             '@' + i.asPython() for i in self.decorator_list)
@@ -179,22 +204,23 @@ class ClassDef(block, ast.ClassDef):
             i.asPython() for i in self.bases + self.keywords)
         if p:
             p = '('+p+')'
-            
+
         return '{}class {}{}:\n{}'.format(
             dec, self.name, p,
             bodyfmt(self.body, indent))
 
-class ExceptHandler(datanode, ast.ExceptHandler):
+class ExceptHandler(datanode, _ast.ExceptHandler):
+    ''''''
     def asPython(self, indent=1):
         n = 'except'
         if self.type:
             n += ' ' + self.type.asPython()
         if self.name:
             n += ' as ' + self.name.asPython()
-        
+
         return '{}:\n{}'.format(n, bodyfmt(self.body, indent))
 
-class Try(block, ast.Try):
+class Try(block, _ast.Try):
     def asPython(self, indent=1):
         body = 'try:\n' + bodyfmt(self.body, indent)
         body += '\n' + '\n'.join(

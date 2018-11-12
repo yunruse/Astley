@@ -1,24 +1,53 @@
-'''Operators used by various OpAppliers.'''
+'''Operators and their appliers'''
 
-from .nodes import ast, kind
+import _ast
+
+from .nodes import kind
+from .expressions import expr
 
 __all__ = (
     'Op', 'boolop', 'cmpop', 'operator', 'unaryop',
-    'operators', 'precedence', 'symbols'
+    'OpApplier', 'BoolOp', 'Compare', 'BinOp', 'UnaryOp',
+    'operators', 'precedence',
 )
 
 class Op(kind):
-    '''Operator that is applied with an OpApplier.'''
+    '''Operator.'''
 
-class boolop(ast.boolop, Op): pass
-class cmpop(ast.cmpop, Op): pass
-class operator(ast.operator, Op): pass
-class unaryop(ast.unaryop, Op): pass
+class boolop(_ast.boolop, Op):
+    def __new__(cls, values=None):
+        self = super().__new__(cls)
+        if values:
+            self = UnaryOp(op=self, values=values)
+        return self
+
+class cmpop(_ast.cmpop, Op):
+    def __new__(cls, left=None, *comparators):
+        self = super().__new__(cls)
+        if left and right:
+            self = Compare(
+                ops=[self] * len(comparators), left=left, comparators=comparators)
+        return self
+
+class operator(_ast.operator, Op):
+    def __new__(cls, left=None, right=None):
+        self = super().__new__(cls)
+        if left and right:
+            self = BinOp(op=self, left=left, right=right)
+        return self
+
+class unaryop(_ast.unaryop, Op):
+    def __new__(cls, operand=None):
+        self = super().__new__(cls)
+        if operand:
+            self = UnaryOp(op=self, operand=operand)
+        return self
+
 
 operators = dict(
     boolop=(
-        ('Or', 'or', 'or_', 1),
-        ('And', 'and', 'and_', 2),
+        ('Or', 'or', None, 1),
+        ('And', 'and', None, 2),
     ),
     operator=(
         ('BitOr', '|', '__or__', 3),
@@ -36,10 +65,10 @@ operators = dict(
         ('Pow', '**', '__pow__', 9),
     ),
     cmpop=(
-        ('In', 'in', 'in_'),
-        ('NotIn', 'not in', 'notin_'),
-        ('Is', 'is', 'is_'),
-        ('IsNot', 'is not', 'isnot_'),
+        ('In', 'in'),
+        ('NotIn', 'not in'),
+        ('Is', 'is'),
+        ('IsNot', 'is not'),
         ('Lt', '<', '__lt__'),
         ('LtE', '<=', '__le__'),
         ('Gt', '>', '__gt__'),
@@ -48,7 +77,7 @@ operators = dict(
         ('Eq', '==', '__eq__'),
     ),
     unaryop=(
-        ('Not', 'not ', 'not_'),
+        ('Not', 'not '),
         ('Invert', '~', '__invert__'),
         ('UAdd', '+', '__pos__'),
         ('USub', '-', '__neg__'),
@@ -56,14 +85,80 @@ operators = dict(
 )
 
 precedence = {}
-symbols = []
 
-for kind, ops in operators.items():
-    for name, sym, func, *prec in ops:
-        __all__ += (name ,)
-        symbols.append(sym.strip())
-        if prec:
-            precedence[name] = prec[0]
-        
-        exec('class {0}(ast.{0}, {2}): sym = "{1}"'.format(
-            name, sym, kind), globals())
+for opKind, ops in operators.items():
+    for nodeName, symbol, *r in ops:
+        if len(r) == 2:
+            precedence[nodeName] = r[1]
+
+        exec('class {0}(_ast.{0}, {2}): symbol = "{1}"'.format(
+             nodeName, symbol, opKind), globals())
+        __all__ += (nodeName, )
+
+
+class OpApplier(expr):
+    '''Node that applies an Op to some values.'''
+    pass
+
+requiresParentheses = (
+    _ast.IfExp, _ast.Lambda, _ast.GeneratorExp
+)
+
+class BinOp(OpApplier, _ast.BinOp):
+    '''Binary infix operator (+, -, and, etc) '''
+    def asPython(self):
+        # Add brackets to ensure cases such as '(a + b) * c'
+        # are represented correctly
+        pm = precedence[self.op.__class__.__name__]
+
+        def name(node):
+            name = node.asPython()
+            if isinstance(node, _ast.BinOp):
+                pinner = precedence[node.op.__class__.__name__]
+                if pm > pinner:
+                    return '(' + name + ')'
+            elif isinstance(node, requiresParentheses):
+                return '(' + name + ')'
+
+            return name
+
+        return "{} {} {}".format(
+            name(self.left), self.op.symbol, name(self.right))
+
+class BoolOp(OpApplier, _ast.BoolOp):
+    '''Binary infix operator that works on booleans (and, or)'''
+    def asPython(self):
+        values = list(map(str, self.values))
+        # try to map 'A and (B or C)' nicely
+        if isinstance(self.op, _ast.Or):
+            for i, v in enumerate(self.values):
+                if isinstance(v, _ast.BinOp) and isinstance(v.op, _ast.And):
+                    self.values[i] = '(' + values[i] + ')'
+
+        return (' ' + self.op.symbol + ' ').join(
+            i.asPython() for i in self.values)
+
+class UnaryOp(OpApplier, _ast.UnaryOp):
+    '''Unary prefix operator.'''
+    sym = "{self.op.symbol}{self.operand}"
+
+class Compare(OpApplier, _ast.Compare):
+    '''Chain of comparators.'''
+    _fields = 'left ops comparators'.split()
+    def asPython(self):
+        chain = map(
+            '{0[0].symbol} {0[1]}'.format,
+            zip(self.ops, self.comparators))
+        return ' '.join((str(self.left), *chain))
+
+    def _op(self, other, operator):
+        self.ops.append(operator)
+        self.comparators.append(other)
+        return self
+    
+    __eq__ = lambda s, o: s._op(o, Eq)
+    __ne__ = lambda s, o: s._op(o, NotEq)
+    __lt__ = lambda s, o: s._op(o, Lt)
+    __le__ = lambda s, o: s._op(o, LtE)
+    __gt__ = lambda s, o: s._op(o, Gt)
+    __ge__ = lambda s, o: s._op(o, GtE)
