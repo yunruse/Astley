@@ -1,7 +1,7 @@
 '''Expressions, all of which may be eval'd '''
 
 # pylint: disable=E0102
-# E0102: repetition of new
+# E0102: repetition of new in op_modifier
 
 import _ast
 from ast import copy_location

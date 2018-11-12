@@ -4,6 +4,10 @@ import _ast
 
 from .node import Node
 
+# pylint: disable=W0614,E1101
+# W0614: import *
+# E1101: node.attr
+
 class BaseNode(Node):
     '''Node used to represent expression or statement body.'''
 

@@ -1,6 +1,8 @@
 """Base Node (= AST) class which all nodes inherit from."""
 
 from _ast import AST
+# pylint: disable=E1101
+# E1101: node.attr
 
 __all__ = "copy parse Node".split()
 
@@ -29,6 +31,8 @@ class CodeDisplay:
             return item.asPython()
         else:
             return item
+        else:
+            return ""
 
 
 class Node:
