@@ -6,7 +6,7 @@
 from _ast import AST
 from .expressions import Num, Str, Name
 
-def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
+def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=True):
     """
     Finalise a node for use in non-Astley contexts.
 
@@ -41,8 +41,8 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
                 setattr(node, name, field)
 
         if printDebug:
-            nodeOld = repr(node)
-            sep = max(0, lvl-1) * '  ' + '\\ ' if lvl else ''
+            nodeOld = node._repr(1, False, asTree=True)
+            sep = max(0, _lvl-1) * '  ' + '\\ ' if _lvl else ''
             print(sep + nodeOld)
 
         for name in node._fields:
@@ -51,10 +51,10 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
             if isinstance(field, tuple):
                 field = list(field)
             if isinstance(field, (list, AST)):
-                setattr(node, name, finalise(field, lineno, col_offset, lvl+1))
+                setattr(node, name, finalise(field, lineno, col_offset, _lvl+1))
 
         if printDebug:
-            nodeNew = str(node)
+            nodeNew = node._repr(1, False, asTree=True)
             if nodeNew != nodeOld:
                 repr(sep + nodeNew)
     return node

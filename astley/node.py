@@ -62,32 +62,39 @@ class Node:
             for name, val in kwargs.items():
                 setattr(self, name, val)
 
-    def _repr(self, noLimit=True):
-        attributes = []
-        for i in tuple(self._fields) + tuple(self._attributes):
+    def _repr(self, nodesLeftToDisplay=-1, showAttributes=True, asTree=False):
+        if asTree and not nodesLeftToDisplay:
+            return '@'
+
+        fields = []
+        for i in tuple(self._fields) + tuple(self._attributes) * showAttributes:
             v = getattr(self, i, None)
             if v is None:
                 continue
             elif isinstance(v, Node):
-                if noLimit:
-                    v = v._repr(True)
-                else:
-                    v = "{.__class__.__name__}(...)".format(v)
-            elif isinstance(v, list):
+                v = v._repr(nodesLeftToDisplay - 1, True, asTree)
+            elif isinstance(v, (tuple, list)):
                 v = "[{}]".format(', '.join(
-                    i._repr(True) if isinstance(i, Node) else repr(i) for i in v
+                    i._repr(nodesLeftToDisplay - 1, True, asTree)
+                    if isinstance(i, Node) else repr(i)
+                    for i in v
                 ))
             else:
                 v = repr(v)
-            attributes.append("{}={}".format(i, v))
+            fields.append("{}={}".format(i, v))
 
-        return "{}({})".format(self.__class__.__name__, ", ".join(attributes))
+        if fields and not nodesLeftToDisplay:
+            args = '...'
+        else:
+            args = ', '.join(fields)
+
+        return "{}({})".format(self.__class__.__name__, args)
 
     def __repr__(self):
-        return Node._repr(self, True)
+        return self._repr(1, False)
 
     def __str__(self):
-        return Node._repr(self, False)
+        return self._repr(-1)
 
     def asPython(self, indent=1):
         return self.sym.format(self=CodeDisplay(self))
