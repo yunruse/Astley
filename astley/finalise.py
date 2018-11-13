@@ -6,7 +6,7 @@
 from _ast import AST
 from .expressions import Num, Str, Name
 
-def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=True):
+def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
     """
     Finalise a node for use in non-Astley contexts.
 
