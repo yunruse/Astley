@@ -47,6 +47,9 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
 
         for name in node._fields:
             field = getattr(node, name, None)
+            # Convert tuple-fields into lists
+            if isinstance(field, tuple):
+                field = list(field)
             if isinstance(field, (list, AST)):
                 setattr(node, name, finalise(field, lineno, col_offset, lvl+1))
 
