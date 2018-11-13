@@ -6,7 +6,7 @@
 from _ast import AST
 from .expressions import Num, Str, Name
 
-def finalise(node, lineno=1, col_offset=0):
+def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
     """
     Finalise a node for use in non-Astley contexts.
 
@@ -20,9 +20,9 @@ def finalise(node, lineno=1, col_offset=0):
     elif callable(node) and hasattr(node, '__name__'):
         return Name(node.__name__)
     elif isinstance(node, (list, tuple)):
-        return type(node)(map(finalise, node))
+        return type(node)(finalise(n, lineno, col_offset, _lvl) for n in node)
     elif isinstance(node, AST):
-        # Copy line number
+        # Copy line and column data
         if 'lineno' in node._attributes:
             if not hasattr(node, 'lineno'):
                 node.lineno = lineno
@@ -40,9 +40,18 @@ def finalise(node, lineno=1, col_offset=0):
             if not hasattr(node, name):
                 setattr(node, name, field)
 
+        if printDebug:
+            nodeOld = repr(node)
+            sep = max(0, lvl-1) * '  ' + '\\ ' if lvl else ''
+            print(sep + nodeOld)
+
         for name in node._fields:
             field = getattr(node, name, None)
             if isinstance(field, (list, AST)):
-                setattr(node, name, finalise(field))
+                setattr(node, name, finalise(field, lineno, col_offset, lvl+1))
 
+        if printDebug:
+            nodeNew = str(node)
+            if nodeNew != nodeOld:
+                repr(sep + nodeNew)
     return node
