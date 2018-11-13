@@ -2,7 +2,7 @@
 
 import _ast
 
-from .nodes import kind
+from . import kind
 from .expressions import expr
 
 __all__ = [

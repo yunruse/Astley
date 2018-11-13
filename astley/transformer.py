@@ -7,8 +7,7 @@ from io import TextIOBase
 from functools import wraps
 
 from .node import Node, parse, modify
-from .nodes import Expression
-from .expressions import expr
+from .nodes import Expression, expr
 
 __all__ = "match Language Python".split()
 
@@ -182,4 +181,3 @@ class Python(Language):
     staticEval = eval
     staticExec = exec
     staticCompile = compile
-

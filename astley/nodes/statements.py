@@ -2,8 +2,8 @@
 
 import _ast
 
-from .node import copy
-from .nodes import Node, Module
+from ..node import copy
+from . import Node, Module
 from .datanodes import Datanode
 from .signature import arguments
 

@@ -2,7 +2,7 @@
 
 import _ast
 
-from .node import Node
+from ..node import Node
 
 # pylint: disable=W0614,E1101
 # W0614: import *
@@ -47,4 +47,4 @@ from .expressions import *
 from .statements import *
 from .ops import *
 from .signature import *
-from .finalise import finalise
+from ..finalise import finalise

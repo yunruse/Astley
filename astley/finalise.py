@@ -4,7 +4,7 @@
 # it relies on .expressions, which relies on .
 
 from _ast import AST
-from .expressions import Num, Str, Name
+from .nodes import Num, Str, Name
 
 def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
     """

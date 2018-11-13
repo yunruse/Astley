@@ -1,6 +1,6 @@
 import _ast
 
-from .nodes import Node
+from . import Node
 
 class Datanode(Node):
     '''Subsidiary data node.'''

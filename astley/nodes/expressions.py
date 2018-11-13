@@ -6,7 +6,7 @@
 import _ast
 from ast import copy_location
 
-from .nodes import Node, functionKind, Expression, load, store
+from . import Node, functionKind, Expression, load, store
 from .datanodes import keyword
 from .signature import arguments
 
