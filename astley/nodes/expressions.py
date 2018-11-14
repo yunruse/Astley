@@ -151,6 +151,7 @@ class Set(Iterable, _ast.Set):
             return '{{{}}}'.format(self._elts)
         else:
             return 'set()'
+
 class Comprehension(expr):
     '''Iterable comprehension'''
     sym = '{self.elt} {self.elements}'
@@ -158,7 +159,7 @@ class Comprehension(expr):
         i.asPython() for i in s.generators))
 
 class GeneratorExp(Comprehension, _ast.GeneratorExp):
-    pass
+    sym = '{self.elt} {self.elements}'
 class SetComp(Comprehension, _ast.SetComp):
     sym = '{{{self.elt} {self.elements}}}'
 class ListComp(Comprehension, _ast.ListComp):
