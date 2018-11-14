@@ -79,7 +79,9 @@ class Name(expr, _ast.Name):
 class NameS(Name):
     _defaults = {'ctx': store}
 class NameConstant(expr, _ast.NameConstant):
-    sym = '{self.value}'
+    '''Keyword name, such as True, False, None'''
+    def asPython(self):
+        return str(self.value)
 class Constant(expr, _ast.Constant):
     sym = '{self.value}'
 class Num(expr, _ast.Num):
