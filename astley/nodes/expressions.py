@@ -15,6 +15,7 @@ expr Expr Name NameS NameConstant Constant \
 Num Ellipsis Str Bytes JoinedStr \
 Subscript Attribute Call IfExp Lambda \
 Iterable List Tuple Dict Set \
+Comprehension GeneratorExp ListComp DictComp SetComp
 '''.split()
 
 class expr(Node):
