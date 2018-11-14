@@ -140,7 +140,7 @@ class BoolOp(OpApplier, _ast.BoolOp):
 
 class UnaryOp(OpApplier, _ast.UnaryOp):
     '''Unary prefix operator.'''
-    sym = "{self.op.symbol}{self.operand}"
+    sym = "{self.op}{self.operand}"
 
 class Compare(OpApplier, _ast.Compare):
     '''Chain of comparators.'''
