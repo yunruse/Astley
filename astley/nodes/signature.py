@@ -3,6 +3,7 @@
 import _ast
 
 from .datanodes import Datanode
+from . import Node
 
 __all__ = 'arg arguments funcSignature'.split()
 
@@ -35,16 +36,19 @@ class arguments(_ast.arguments, Datanode):
                     if dindex >= 0:
                         defa = defaults[dindex]
 
+                if isinstance(defa, Node):
+                    defa = defa.asPython()
+
                 word = arg.arg
                 ann = getattr(arg, "annotation", None)
 
                 if ann is not None:
                     word += ': {}'.format(ann)
                     if defa is not None:
-                        word += ' = {}'.format(defa)
+                        word += ' = ' + defa
                 else:
                     if defa is not None:
-                        word += '={}'.format(defa)
+                        word += '=' + defa
 
                 words.append(word)
 
