@@ -152,6 +152,8 @@ class Definition(Block):
 
 class FunctionDef(_ast.FunctionDef, Definition):
     _fields = 'name args body decorator_list returns'.split()
+    _defaults = dict(returns=None, decorator_list=[], body=[], name='<astley>')
+    symbol = 'def'
 
     @classmethod
     def withBody(cls, body, **kwargs):
@@ -161,15 +163,18 @@ class FunctionDef(_ast.FunctionDef, Definition):
         @withBody(Return(Name('a') + Name('b'))):
         def add(a, b=2): ...
         '''
+        wrapkw = cls._defaults.copy()
+        wrapkw.update(kwargs)
+        wrapkw['body'] = body
         def wrapper(func):
-            kw = kwargs.copy()
+            kw = wrapkw.copy()
             if hasattr(func, '__name__'):
-                kw.setdefault('name', func.__name__)
+                kw['name'] = func.__name__
             if hasattr(func, '__annotations__'):
                 an = func.__annotations__
                 if 'return' in an:
-                    kw.setdefault('returns', an['return'])
-            kw.setdefault('args', arguments.fromFunction(func))
+                    kw['returns'] = an['return']
+            kw['args'] = arguments.fromFunction(func)
             return cls(**kw)
         return wrapper
 
