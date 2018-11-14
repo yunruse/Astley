@@ -20,9 +20,7 @@ class AssignKind(stmt):
 class Assign(_ast.Assign, AssignKind):
     '''Assignment of value(s)'''
     def asPython(self):
-        return '{} = {}'.format(
-            ', '.join(i.asPython() for i in self.targets),
-            self.value)
+        return ' = '.join(i.asPython() for i in self.targets + [self.value])
 
 class AugAssign(_ast.AugAssign, AssignKind):
     '''Augmented in-place assignment (eg +=)'''
