@@ -19,5 +19,6 @@ from ast import (
 from .node import *
 from .nodes import *
 from .transformer import *
+from .finalise import finalise
 
 AST = Node
