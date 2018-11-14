@@ -10,7 +10,7 @@ def replace(fn):
     )
 
 FILES = []
-for dirpath, dirnames, filenames in walk('../astley'):
+for dirpath, dirnames, filenames in walk('../astley/astley'):
     for fn in filenames:
         if fn.endswith('.py'):
             fn = path.abspath(path.join(dirpath, fn))
