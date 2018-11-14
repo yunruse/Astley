@@ -20,11 +20,10 @@ class keyword(_ast.keyword, Datanode):
 class Alias(Datanode):
     def asPython(self):
         name, alias = (getattr(self, i, None) for i in self._fields)
-        name = name.asPython()
         if alias:
-            return name + " as " + alias.asPython()
+            return "{} as {}".format(name, alias)
         else:
-            return name
+            return str(name)
 
 class alias(_ast.alias, Alias):
     """Aliases in an import"""
