@@ -105,11 +105,11 @@ class If(_ast.If, Block):
             bodyfmt(self.body, indent))
         e = getattr(self, 'orelse', None)
         if e:
+            body += '\n' + '    ' * (indent-1)
             if len(e) == 1 and isinstance(e[0], _ast.If):
-                body += '\nel' + e[0].asPython()
+                body += 'el' + e[0].asPython(indent)
             else:
-                body += '\nelse:\n{}'.format(
-                    bodyfmt(e, indent))
+                body +='else:\n' + bodyfmt(e, indent)
         return body
 
 class While(_ast.While, Block):
