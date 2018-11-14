@@ -3,6 +3,7 @@
 import _ast
 
 from ..node import copy
+from ..finalise import finalise
 from . import Node, Module
 from .datanodes import Datanode
 from .signature import arguments
@@ -10,7 +11,7 @@ from .signature import arguments
 class stmt(Node):
     '''Statement node - subclasses may be exec'd'''
     def compile(self, filename='<unknown>'):
-        module = copy(self, Module(body=[self]))
+        module = copy(self, Module(body=[finalise(self)]))
         return module.compile(filename)
 
 class AssignKind(stmt):
