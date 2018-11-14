@@ -117,13 +117,9 @@ class IfExp(expr, _ast.IfExp):
 class Lambda(functionKind, expr, _ast.Lambda):
     sym = 'lambda {self.args}: {self.body}'
 
-    def __new__(cls, func_or_args=None, body=None):
-        args = func_or_args
-        if callable(args):
-            args = arguments.fromFunction(func_or_args)
-        return _ast.Lambda.__new__(
-            cls, args=args, body=body or Ellipsis()
-        )
+    @classmethod
+    def fromFunction(cls, func=None, body=None):
+        return cls(arguments.fromFunction(func), body or None)
 
 # Iterables
 
