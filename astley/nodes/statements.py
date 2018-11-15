@@ -104,7 +104,7 @@ def _display(item, indent=0):
 def bodyfmt(body, indent=0):
     if body and isinstance(body[0], Expr) and isinstance(body[0].value, Str):
         # docstring
-        body[0] = body[0].value.asFmt("'''")
+        body[0] = body[0].value.asFmt('"""')
     return '\n'.join(_display(i, indent) for i in body)
 
 class If(_ast.If, Block):
