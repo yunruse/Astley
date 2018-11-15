@@ -59,4 +59,9 @@ class Index(_ast.Index, SliceKind):
 
 class Slice(_ast.Slice, SliceKind):
     sym = "{self.lo}:{self.hi}{self._step}"
-    _step = property(lambda s: ":" + s.step if hasattr(s, 'step') else '')
+    @property
+    def _step(self):
+        s = getattr(self, 'step', None)
+        if s:
+            return ':' + s.asPython()
+        return ''
