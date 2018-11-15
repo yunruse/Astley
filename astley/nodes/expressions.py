@@ -155,12 +155,12 @@ class Tuple(Iterable, _ast.Tuple):
     _defaults = {'ctx': load}
     def asPython(self):
         elts = self.elts
-        if len(elts) == 1:
-            elts = (*elts, '')
-        if elts:
-            return self._elts
-        else:
+        if len(elts) == 0:
             return '()'
+        elif len(elts) == 1:
+            return '({}, )'.format(elts[0].asPython())
+        else:
+            return '({})'.format(self._elts)
 class Dict(Iterable, _ast.Dict):
     def asPython(self):
         return '{{{}}}'.format(', '.join(
