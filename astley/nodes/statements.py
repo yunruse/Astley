@@ -25,7 +25,7 @@ class Assign(_ast.Assign, AssignKind):
 
 class AugAssign(_ast.AugAssign, AssignKind):
     '''Augmented in-place assignment (eg +=)'''
-    sym='{self.target} {self.op}= {self.value}'
+    sym = '{self.target} {self.op}= {self.value}'
 
 class AnnAssign(_ast.AnnAssign, AssignKind):
     '''Single-value type-annotated assignment'''
@@ -41,22 +41,34 @@ class AnnAssign(_ast.AnnAssign, AssignKind):
 
 class Oneliner(stmt):
     '''Base class: One-line statement.'''
+    val = 'value'
     def asPython(self):
-        v = getattr(self, 'value', getattr(self, 'exc', None))
-        sym = getattr(self, 'sym')
+        v = getattr(self, self.val, None)
         if v:
-            return sym + ' ' + v.asPython()
+            return self.sym + ' ' + v.asPython()
         else:
-            return sym
+            return self.sym
 
-class Return(_ast.Return, Oneliner): sym='return'
-class Delete(_ast.Delete, Oneliner): sym='del'
-class Raise(_ast.Raise, Oneliner): sym='raise'
-class Await(_ast.Yield, Oneliner): sym='await'
-class Yield(_ast.Yield, Oneliner): sym='yield'
-class YieldFrom(_ast.YieldFrom, Oneliner): sym='yield from'
-class Global(_ast.Global, Oneliner): sym='global'
-class Nonlocal(_ast.Nonlocal, Oneliner): sym='nonlocal'
+class Return(_ast.Return, Oneliner):
+    sym = 'return'
+class Raise(_ast.Raise, Oneliner):
+    sym = 'raise'
+    val = 'exc'
+class Await(_ast.Yield, Oneliner):
+    sym = 'await'
+class Yield(_ast.Yield, Oneliner):
+    sym = 'yield'
+class YieldFrom(_ast.YieldFrom, Oneliner):
+    sym = 'yield from'
+class Global(_ast.Global, Oneliner):
+    sym = 'global'
+class Nonlocal(_ast.Nonlocal, Oneliner):
+    sym = 'nonlocal'
+class Delete(_ast.Delete, Oneliner):
+    _fields = 'targets'
+    def asPython(self):
+        targets = getattr(self, 'targets', [])
+        return 'del ' + ', '.join(i.asPython() for i in targets)
 
 class Assert(_ast.Assert, Oneliner):
     def asPython(self):
@@ -70,9 +82,9 @@ class Assert(_ast.Assert, Oneliner):
 class Word(Oneliner):
     '''Base class: Single-word statements.'''
 
-class Pass(_ast.Pass, Word): sym='pass'
-class Continue(_ast.Continue, Word): sym='continue'
-class Break(_ast.Break, Word): sym='break'
+class Pass(_ast.Pass, Word): sym = 'pass'
+class Continue(_ast.Continue, Word): sym = 'continue'
+class Break(_ast.Break, Word): sym = 'break'
 
 class Import(_ast.Import, stmt):
     _fields = 'names'.split()
