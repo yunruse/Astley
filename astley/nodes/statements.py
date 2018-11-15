@@ -132,8 +132,8 @@ class If(_ast.If, Block):
 class While(_ast.While, Block):
     _fields = 'test body'.split()
     def asPython(self, indent=0):
-        tab = ' ' * 4 * indent
-        return tab + 'while {}:\n'.format(self.test) + bodyfmt(self.body, indent+1)
+        body = ' ' * 4 * indent + 'while {}:\n'.format(self.test.asPython())
+        return body + bodyfmt(self.body, indent+1)
 
 class For(_ast.For, Block):
     _fields = 'test body'.split()
