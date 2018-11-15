@@ -96,6 +96,11 @@ class Node:
     def __str__(self):
         return self._repr(-1)
 
+    def __eq__(self, other):
+        return (self._fields == other._fields
+            and (getattr(self, i, None) == getattr(other, i, None)
+                 for i in self._fields))
+
     def asPython(self, indent=1):
         return self.sym.format(self=CodeDisplay(self))
 
