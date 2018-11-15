@@ -92,52 +92,59 @@ class Block(stmt):
 class AsyncBlock(Block):
     pass
 
-def _display(item, indent=1):
+def _display(item, indent=0):
     if isinstance(item, Block):
         return item.asPython(indent)
-    elif isinstance(item, Node):
-        return item.asPython()
     else:
-        return str(item)
+        if isinstance(item, Node):
+            item = item.asPython()
+        return ' ' * 4 * indent + item
 
-def bodyfmt(body, indent=1):
-    return '\n'.join(' ' * 4 * indent + _display(i, indent+1) for i in body)
+def bodyfmt(body, indent=0):
+    return '\n'.join(_display(i, indent) for i in body)
 
 class If(_ast.If, Block):
     _fields = 'test body orelse'.split()
     _defaults = {'orelse': []}
-    def asPython(self, indent=1):
-        body = 'if {}:\n{}'.format(
-            self.test.asPython(),
-            bodyfmt(self.body, indent))
-        e = getattr(self, 'orelse', None)
-        if e:
-            body += '\n' + '    ' * (indent-1)
-            if len(e) == 1 and isinstance(e[0], _ast.If):
-                body += 'el' + e[0].asPython(indent)
+    def asPython(self, indent=0):
+        tab = ' ' * 4 * indent
+        body = tab + 'if {}:\n'.format(self.test.asPython())
+        body += bodyfmt(self.body, indent+1)
+
+        # `elif` is just an If(orelse=If()), so we must navigate a chain
+        orelse = getattr(self, 'orelse', None)
+        while orelse:
+            body += '\n' + tab
+            if len(orelse) == 1 and isinstance(orelse[0], _ast.If):
+                newif = orelse[0]
+                body += 'elif {}:\n'.format(newif.test.asPython())
+                body += bodyfmt(newif.body, indent+1)
+                orelse = getattr(newif, 'orelse', None)
             else:
-                body +='else:\n' + bodyfmt(e, indent)
+                body += 'else:\n' + bodyfmt(orelse, indent+1)
+                orelse = None
         return body
 
 class While(_ast.While, Block):
     _fields = 'test body'.split()
-    def asPython(self, indent=1):
-        return 'while {}:\n{}'.format(
-            self.test, bodyfmt(self.body, indent))
+    def asPython(self, indent=0):
+        tab = ' ' * 4 * indent
+        return tab + 'while {}:\n'.format(self.test) + bodyfmt(self.body, indent+1)
 
 class For(_ast.For, Block):
     _fields = 'test body'.split()
     _defaults = {'orelse': []}
-    def asPython(self, indent=1):
-        body = '{} {} in {}:\n{}'.format(
+    def asPython(self, indent=0):
+        tab = ' ' * 4 * indent
+        body = tab + '{} {} in {}:\n'.format(
             self.symbol,
             self.target.asPython(),
-            self.iter.asPython(),
-            bodyfmt(self.body, indent))
+            self.iter.asPython())
+        body += bodyfmt(self.body, indent+1)
         e = getattr(self, 'orelse', None)
         if e:
-            body += '\nelse:\n{}'.format(
-                bodyfmt(e, indent))
+            body += '\n' + tab + 'else:\n'
+            body += bodyfmt(e, indent+1)
         return body
     symbol = 'for'
 
@@ -146,10 +153,10 @@ class AsyncFor(_ast.AsyncFor, For, AsyncBlock):
 
 class With(_ast.With, Block):
     symbol = 'with'
-    def asPython(self, indent=1):
-        return 'with {}:\n{}'.format(
-            ', '.join(i.asPython() for i in self.items),
-            bodyfmt(self.body, indent))
+    def asPython(self, indent=0):
+        tab = ' ' * 4 * indent
+        body = tab + 'with {}:\n'.format(', '.join(i.asPython() for i in self.items))
+        return body + bodyfmt(self.body, indent+1)
 
 class AsyncWith(With, AsyncBlock, _ast.AsyncWith):
     symbol = 'async with'
@@ -185,58 +192,57 @@ class FunctionDef(_ast.FunctionDef, Definition):
             return cls(**kw)
         return wrapper
 
-    def asPython(self, indent=1):
-        dec = '\n'.join(
-            '@' + i.asPython() for i in self.decorator_list)
-        if dec:
-            dec += '\n'
+    def asPython(self, indent=0):
+        lines = ['@' + i.asPython() for i in self.decorator_list]
+
         returns = ''
-        if self.returns:
+        if hasattr(self, 'returns') and self.returns:
             returns = ' -> ' + self.returns.asPython()
-        return '{}{} {}({}){}:\n{}'.format(
-            dec, self.symbol, self.name,
-            self.args.asPython(), returns,
-            bodyfmt(self.body, indent))
+
+        lines.append('{} {}({}){}:'.format(
+            self.symbol, self.name,
+            self.args.asPython(), returns))
+
+        return bodyfmt(lines, indent) + '\n' + bodyfmt(self.body, indent+1)
 
 class AsyncFunctionDef(_ast.AsyncFunctionDef, FunctionDef, AsyncBlock):
     symbol = 'async def'
 
 class ClassDef(_ast.ClassDef, Definition):
-    def asPython(self, indent=1):
-        dec = '\n'.join(
-            '@' + i.asPython() for i in self.decorator_list)
-        if dec:
-            dec += '\n'
+    def asPython(self, indent=0):
+        lines = ['@' + i.asPython() for i in self.decorator_list]
+
         p = ', '.join(
-            i.asPython() for i in self.bases + self.keywords)
+            i.asPython() for i in self.bases + self.keywords).strip()
         if p:
             p = '('+p+')'
 
-        return '{}class {}{}:\n{}'.format(
-            dec, self.name, p,
-            bodyfmt(self.body, indent))
+        lines.append('class {}{}:'.format(self.name, p))
+
+        return bodyfmt(lines, indent) + '\n' + bodyfmt(self.body, indent+1)
 
 class ExceptHandler(_ast.ExceptHandler, Datanode):
     '''Individual exception in a Try block.'''
-    def asPython(self, indent=1):
-        n = 'except'
-        if self.type:
-            n += ' ' + self.type.asPython()
-        if self.name:
-            n += ' as ' + self.name.asPython()
-
-        return '{}:\n{}'.format(n, bodyfmt(self.body, indent))
 
 class Try(_ast.Try, Block):
     _fields = 'body handlers orelse finalbody'.split()
     _defaults = {'orelse': [], 'finalbody': []}
-    def asPython(self, indent=1):
-        body = 'try:\n' + bodyfmt(self.body, indent)
-        body += '\n' + '\n'.join(
-            i.asPython(indent) for i in self.handlers)
+    def asPython(self, indent=0):
+        tab = ' ' * 4 * indent
+        body = tab + 'try:\n'
+        body += bodyfmt(self.body, indent+1)
+
+        for exc in self.handlers:
+            body += '\n' + tab + 'except'
+            if exc.type:
+                body += ' ' + exc.type.asPython()
+            if exc.name:
+                body += ' as ' + exc.name.asPython()
+            body += ':\n' + bodyfmt(exc.body, indent+1)
+
         e, f = getattr(self, 'orelse', None), getattr(self, 'finalbody', None)
         if e:
-            body += '\nelse:\n' + bodyfmt(e, indent)
+            body += '\n' + tab + 'else:\n' + bodyfmt(e, indent+1)
         if f:
-            body += '\nfinally:\n' + bodyfmt(f, indent)
+            body += '\n' + tab + 'finally:\n' + bodyfmt(f, indent+1)
         return body
