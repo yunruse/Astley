@@ -90,7 +90,26 @@ class Ellipsis(expr, _ast.Ellipsis):
     sym = '...'
 
 class Str(expr, _ast.Str):
-    sym = '{self.s!r}'
+    def asFmt(self, sep="'"):
+        """repr(str) with your choice of separator. Not complete.
+        """
+        if sep not in ("'", '"', '"""', "'''"):
+            raise ValueError('Invalid separator.')
+
+        asRepr = repr(self.s)[:-1]
+        oldSep = asRepr[0]
+        asRepr = asRepr[1:]
+
+        if oldSep != sep:
+            asRepr = asRepr.replace('\\' + oldSep, oldSep).replace(sep, '\\' + sep)
+            if sep in ('"""', "'''"):
+                asRepr = asRepr.replace('\\n', '\n')
+
+        return sep + asRepr + sep
+
+    def asPython(self):
+        return self.asFmt(sep='"')
+
 class Bytes(expr, _ast.Bytes):
     sym = '{self.s!r}'
 
