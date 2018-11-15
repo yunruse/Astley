@@ -180,7 +180,7 @@ class Comprehension(expr):
         i.asPython() for i in s.generators))
 
 class GeneratorExp(Comprehension, _ast.GeneratorExp):
-    sym = '{self.elt} {self.elements}'
+    sym = '({self.elt} {self.elements})'
 class SetComp(Comprehension, _ast.SetComp):
     sym = '{{{self.elt} {self.elements}}}'
 class ListComp(Comprehension, _ast.ListComp):
