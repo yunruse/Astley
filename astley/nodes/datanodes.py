@@ -12,10 +12,11 @@ class keyword(_ast.keyword, Datanode):
     """Keyword used in a Call."""
     def asPython(self):
         arg = getattr(self, "arg", None)
+        val = self.value.asPython()
         if arg:
-            return "{}={}".format(arg, self.value)
+            return "{}={}".format(arg, val)
         else:
-            return "**{}".format(self.value)
+            return "**{}".format(val)
 
 class Alias(Datanode):
     def asPython(self):
