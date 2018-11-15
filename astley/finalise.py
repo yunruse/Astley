@@ -4,7 +4,7 @@
 # it relies on .expressions, which relies on .
 
 from _ast import AST
-from .nodes import Num, Str, Name
+from .nodes import Num, Str, Name, NameConstant
 
 def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
     """
@@ -13,6 +13,8 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
     Fixes line numbers (similar to ast.fix_missing_locations),
     provides node defaults, and serialises literals to their node form.
     """
+    if isinstance(node, bool):
+        return NameConstant(node)
     if isinstance(node, (int, float)):
         return Num(node)
     elif isinstance(node, str):
