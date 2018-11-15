@@ -92,11 +92,16 @@ class Block(stmt):
 class AsyncBlock(Block):
     pass
 
+def _display(item, indent=1):
+    if isinstance(item, Block):
+        return item.asPython(indent)
+    elif isinstance(item, Node):
+        return item.asPython()
+    else:
+        return str(item)
+
 def bodyfmt(body, indent=1):
-    return '\n'.join(
-        ' ' * 4 * indent + (i.asPython(indent + 1)
-        if isinstance(i, Block) else i.asPython())
-        for i in body)
+    return '\n'.join(' ' * 4 * indent + _display(i, indent+1) for i in body)
 
 class If(_ast.If, Block):
     _fields = 'test body orelse'.split()
