@@ -6,6 +6,8 @@
 from _ast import AST
 from .nodes import Num, Str, Name, NameConstant
 
+NODE_ONLY_FIELDS = "body value left right".split()
+
 def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
     """
     Finalise a node for use in non-Astley contexts.
@@ -52,8 +54,9 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
             # Convert tuple-fields into lists
             if isinstance(field, tuple):
                 field = list(field)
-            if isinstance(field, (list, AST)):
+            if isinstance(field, (list, AST)) or field in NODE_ONLY_FIELDS:
                 setattr(node, name, finalise(field, lineno, col_offset, _lvl+1))
+
 
         if printDebug:
             nodeNew = node._repr(1, False, asTree=True)
