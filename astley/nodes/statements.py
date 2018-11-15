@@ -74,14 +74,16 @@ class Continue(_ast.Continue, Word): sym='continue'
 class Break(_ast.Break, Word): sym='break'
 
 class Import(_ast.Import, stmt):
+    _fields = 'names'.split()
     def asPython(self):
         return 'import {}'.format(
             ', '.join(i.asPython() for i in self.names))
 
 class ImportFrom(_ast.ImportFrom, Import):
+    _fields = 'module names level'.split()
     def asPython(self):
-        return 'from {} import {}'.format(
-            self.module,
+        return 'from {}{} import {}'.format(
+            '.' * getattr(self, 'level', 0), self.module or '',
             ', '.join(i.asPython() for i in self.names))
 
 class Block(stmt):
