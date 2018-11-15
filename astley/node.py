@@ -36,7 +36,7 @@ class CodeDisplay:
 
 
 class Node:
-    sym = "<{self.__class__.__name__}>"
+    sym = ""
 
     def __init__(self, *args, **kw):
         if not args or kw:
