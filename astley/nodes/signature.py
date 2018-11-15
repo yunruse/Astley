@@ -55,14 +55,14 @@ class arguments(_ast.arguments, Datanode):
         argify(self.args, self.defaults, False)
 
         if self.vararg:
-            words.append('*' + str(self.vararg))
+            words.append('*' + self.vararg.arg)
         elif self.kwonlyargs:
             words.append('*')
 
         argify(self.kwonlyargs, self.kw_defaults, True)
 
         if self.kwarg:
-            words.append('**' + str(self.kwarg))
+            words.append('**' + self.kwarg.arg)
 
         return ', '.join(words)
 
