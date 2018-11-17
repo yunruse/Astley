@@ -14,11 +14,11 @@ class TestFile(TestCase):
                 os.remove(fn2)
 
     def file_test(self, fn1, fn2):
-        with open(fn1) as f:
+        with open(fn1, encoding='utf8') as f:
             source = f.read(-1)
         expr = parse(source, fn1)
         new = expr.asPython()
-        with open(fn2, 'w') as f:
+        with open(fn2, 'w', encoding='utf8') as f:
             f.write(new)
         expr2 = parse(new, fn2)
         self.assertEqual(expr, expr2)
