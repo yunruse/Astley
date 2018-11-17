@@ -65,7 +65,7 @@ class Global(_ast.Global, Oneliner):
 class Nonlocal(_ast.Nonlocal, Oneliner):
     sym = 'nonlocal'
 class Delete(_ast.Delete, Oneliner):
-    _fields = 'targets'
+    _fields = 'targets'.split()
     def asPython(self):
         targets = getattr(self, 'targets', [])
         return 'del ' + ', '.join(i.asPython() for i in targets)
