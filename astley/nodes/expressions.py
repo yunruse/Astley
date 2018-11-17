@@ -123,6 +123,9 @@ class JoinedStr(expr, _ast.JoinedStr):
         return 'f' + repr(self.asRaw())
 
 class Subscript(expr, _ast.Subscript):
+    _fields = 'value slice ctx'.split()
+    _defaults = {'ctx': load}
+
     sym = '{self.value}[{self.slice}]'
 class Attribute(expr, _ast.Attribute):
     sym = '{self.value}.{self.attr}'
