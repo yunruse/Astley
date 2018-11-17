@@ -28,15 +28,17 @@ class AugAssign(_ast.AugAssign, AssignKind):
     sym = '{self.target} {self.op}= {self.value}'
 
 class AnnAssign(_ast.AnnAssign, AssignKind):
-    '''Single-value type-annotated assignment'''
+    '''Single-target type-annotated assignment'''
+    _fields = 'target annotation value'.split()
+    _defaults = {'value': None}
     def asPython(self):
+        target = self.target.asPython()
+        annotation = self.annotation.asPython()
         value = getattr(self, 'value', None)
         if value:
             return '{}: {} = {}'.format(
-                self.target, self.annotation, self.value)
-        return '{} = {}'.format(
-            ', '.join(i.asPython() for i in self.targets),
-            self.value)
+                target, annotation, value.asPython())
+        return '{}: {}'.format(target, annotation)
 
 
 class Oneliner(stmt):
