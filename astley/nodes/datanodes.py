@@ -10,11 +10,12 @@ class Starred(_ast.Starred, Datanode):
 
 class keyword(_ast.keyword, Datanode):
     """Keyword used in a Call."""
+    _fields = 'arg value'.split()
+    _defaults = {'arg': None}
     def asPython(self):
-        arg = getattr(self, "arg", None)
         val = self.value.asPython()
-        if arg:
-            return "{}={}".format(arg, val)
+        if self.arg:
+            return "{}={}".format(self.arg, val)
         else:
             return "**{}".format(val)
 
@@ -26,9 +27,8 @@ class alias(_ast.alias, Alias):
     _fields = "name asname".split()
     _defaults = {"asname": None}
     def asPython(self):
-        alias = getattr(self, 'asname', '')
-        if alias:
-            return self.name + " as " + alias
+        if self.asname:
+            return self.name + " as " + self.asname
         else:
             return self.name
 
@@ -38,7 +38,7 @@ class withitem(_ast.withitem, Alias):
     _defaults = {"optional_vars": None}
     def asPython(self):
         expr = self.context_expr.asPython()
-        alias = getattr(self, 'optional_vars', None)
+        alias = self.optional_vars
         if alias:
             return expr + " as " + alias.asPython()
         else:
@@ -49,11 +49,11 @@ class FormattedValue(_ast.FormattedValue, Datanode):
     _fields = 'value format_spec'.split()
     _defaults = {'format_spec': ''}
     def asPython(self):
-        n, fs = (getattr(self, i, None) for i in self._fields)
-        n = n.asPython()
-        if fs:
-            n += ":" + str(fs.asRaw())
-        return "{" + n + "}"
+        value = self.value.asPython()
+        fmt = self.format_spec
+        if fmt:
+            value += ":" + str(fmt.asRaw())
+        return "{" + value + "}"
 
 class comprehension(_ast.comprehension, Datanode):
     """Iterator and targets in comprehenson expressions"""
@@ -64,12 +64,11 @@ class comprehension(_ast.comprehension, Datanode):
             self.target.asPython(),
             self.iter.asPython()
         )
-        if getattr(self, 'is_async', False):
+        if self.is_async:
             text = 'async ' + text
-        ifs = getattr(self, 'ifs', [])
-        if ifs:
+        if self.ifs:
             text += ' ' + ' '.join(
-                'if ' + a.asPython() for a in ifs
+                'if ' + a.asPython() for a in self.ifs
             )
         return text
 
@@ -83,7 +82,6 @@ class Slice(_ast.Slice, SliceKind):
     sym = "{self.lower}:{self.upper}{self._step}"
     @property
     def _step(self):
-        s = getattr(self, 'step', None)
-        if s:
-            return ':' + s.asPython()
+        if self.step:
+            return ':' + self.step.asPython()
         return ''

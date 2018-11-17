@@ -32,42 +32,35 @@ class AnnAssign(_ast.AnnAssign, AssignKind):
     _fields = 'target annotation value'.split()
     _defaults = {'value': None}
     def asPython(self):
-        target = self.target.asPython()
-        annotation = self.annotation.asPython()
-        value = getattr(self, 'value', None)
-        if value:
+        tgt = self.target.asPython()
+        ann = self.annotation.asPython()
+        if self.value:
             return '{}: {} = {}'.format(
-                target, annotation, value.asPython())
-        return '{}: {}'.format(target, annotation)
+                tgt, ann, self.value.asPython())
+        return '{}: {}'.format(tgt, ann)
 
 
 class Oneliner(stmt):
     '''Base class: One-line statement.'''
-    val = 'value'
-    def asPython(self):
-        v = getattr(self, self.val, None)
-        if v:
-            return self.sym + ' ' + v.asPython()
-        else:
-            return self.sym
+    _fields = 'value'.split()
 
 class Return(_ast.Return, Oneliner):
-    sym = 'return'
-class Raise(_ast.Raise, Oneliner):
-    sym = 'raise'
-    val = 'exc'
+    sym = 'return {self.value}'
 class Await(_ast.Yield, Oneliner):
-    sym = 'await'
+    sym = 'await {self.value}'
 class Yield(_ast.Yield, Oneliner):
-    sym = 'yield'
+    sym = 'yield {self.value}'
 class YieldFrom(_ast.YieldFrom, Oneliner):
-    sym = 'yield from'
+    sym = 'yield from {self.value}'
+
+class Raise(_ast.Raise, Oneliner):
+    _fields = 'exc'.split()
+    sym = 'raise {self.exc}'
 
 class Delete(_ast.Delete, Oneliner):
     _fields = 'targets'.split()
     def asPython(self):
-        targets = getattr(self, 'targets', [])
-        return 'del ' + ', '.join(i.asPython() for i in targets)
+        return 'del ' + ', '.join(i.asPython() for i in self.targets)
 
 class VarContextStmt(Oneliner):
     _fields = 'names'.split()
@@ -82,18 +75,20 @@ class Nonlocal(_ast.Nonlocal, VarContextStmt):
 class Assert(_ast.Assert, Oneliner):
     def asPython(self):
         code = 'assert ' + self.test.asPython()
-        msg = getattr(self, 'msg', None)
-        if msg:
-            return code + ', ' + msg.asPython()
+        if self.msg:
+            return code + ', ' + self.msg.asPython()
         else:
             return code
 
 class Word(Oneliner):
     '''Base class: Single-word statements.'''
 
-class Pass(_ast.Pass, Word): sym = 'pass'
-class Continue(_ast.Continue, Word): sym = 'continue'
-class Break(_ast.Break, Word): sym = 'break'
+class Pass(_ast.Pass, Word):
+    sym = 'pass'
+class Continue(_ast.Continue, Word):
+    sym = 'continue'
+class Break(_ast.Break, Word):
+    sym = 'break'
 
 class Import(_ast.Import, stmt):
     _fields = 'names'.split()
@@ -103,9 +98,10 @@ class Import(_ast.Import, stmt):
 
 class ImportFrom(_ast.ImportFrom, Import):
     _fields = 'module names level'.split()
+    _defaults = {'level': 0}
     def asPython(self):
         return 'from {}{} import {}'.format(
-            '.' * getattr(self, 'level', 0), self.module or '',
+            '.' * self.level, self.module or '',
             ', '.join(i.asPython() for i in self.names))
 
 class Block(stmt):
@@ -137,14 +133,14 @@ class If(_ast.If, Block):
         body += bodyfmt(self.body, indent+1)
 
         # `elif` is just an If(orelse=If()), so we must navigate a chain
-        orelse = getattr(self, 'orelse', None)
+        orelse = self.orelse
         while orelse:
             body += '\n' + tab
             if len(orelse) == 1 and isinstance(orelse[0], _ast.If):
                 newif = orelse[0]
                 body += 'elif {}:\n'.format(newif.test.asPython())
                 body += bodyfmt(newif.body, indent+1)
-                orelse = getattr(newif, 'orelse', None)
+                orelse = newif.orelse
             else:
                 body += 'else:\n' + bodyfmt(orelse, indent+1)
                 orelse = None
@@ -166,10 +162,9 @@ class For(_ast.For, Block):
             self.target.asPython(),
             self.iter.asPython())
         body += bodyfmt(self.body, indent+1)
-        e = getattr(self, 'orelse', None)
-        if e:
+        if self.orelse:
             body += '\n' + tab + 'else:\n'
-            body += bodyfmt(e, indent+1)
+            body += bodyfmt(self.orelse, indent+1)
         return body
     symbol = 'for'
 
@@ -265,9 +260,8 @@ class Try(_ast.Try, Block):
                 body += ' as ' + exc.name
             body += ':\n' + bodyfmt(exc.body, indent+1)
 
-        e, f = getattr(self, 'orelse', None), getattr(self, 'finalbody', None)
-        if e:
-            body += '\n' + tab + 'else:\n' + bodyfmt(e, indent+1)
-        if f:
-            body += '\n' + tab + 'finally:\n' + bodyfmt(f, indent+1)
+        if self.orelse:
+            body += '\n' + tab + 'else:\n' + bodyfmt(self.orelse, indent+1)
+        if self.finalbody:
+            body += '\n' + tab + 'finally:\n' + bodyfmt(self.finalbody, indent+1)
         return body

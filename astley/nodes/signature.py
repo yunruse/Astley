@@ -10,6 +10,7 @@ __all__ = 'arg arguments funcSignature'.split()
 class arg(_ast.arg, Datanode):
     """Name and optional annotation."""
     _fields = 'arg annotation'.split()
+    _defaults = {'annotation': None}
 
 class arguments(_ast.arguments, Datanode):
     """Function argument signature"""
@@ -40,7 +41,7 @@ class arguments(_ast.arguments, Datanode):
                     defa = defa.asPython()
 
                 word = arg.arg
-                ann = getattr(arg, "annotation", None)
+                ann = arg.annotation
 
                 if ann is not None:
                     word += ': {}'.format(ann.asPython())
