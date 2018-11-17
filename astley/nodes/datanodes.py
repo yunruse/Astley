@@ -19,22 +19,30 @@ class keyword(_ast.keyword, Datanode):
             return "**{}".format(val)
 
 class Alias(Datanode):
-    def asPython(self):
-        name, alias = (getattr(self, i, None) for i in self._fields)
-        if alias:
-            return "{} as {}".format(name, alias)
-        else:
-            return str(name)
+    pass
 
 class alias(_ast.alias, Alias):
     """Aliases in an import"""
     _fields = "name asname".split()
-    defaults = {"asname": None}
+    _defaults = {"asname": None}
+    def asPython(self):
+        alias = getattr(self, 'asname', '')
+        if alias:
+            return self.name + " as " + alias
+        else:
+            return self.name
 
 class withitem(_ast.withitem, Alias):
     """Aliases in a With block"""
     _fields = "context_expr optional_vars".split()
-    defaults = {"optional_vars": None}
+    _defaults = {"optional_vars": None}
+    def asPython(self):
+        expr = self.context_expr.asPython()
+        alias = getattr(self, 'optional_vars', '')
+        if alias:
+            return expr + " as " + alias
+        else:
+            return expr
 
 class FormattedValue(_ast.FormattedValue, Datanode):
     """String and formatting used in f-string"""
