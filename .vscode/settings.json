@@ -11,6 +11,6 @@
     "python.unitTest.unittestEnabled": true,
     "python.formatting.provider": "black",
     "python.linting.ignorePatterns": [
-        "_test/*.py",
+        "tests/result_*.py",
     ]
 }

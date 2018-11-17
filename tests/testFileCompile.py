@@ -1,50 +1,33 @@
 import os
 from os import path
+from sys import version_info
 from unittest import TestCase
 
 from astley import parse
 
-# pylint: disable=E0211
-# E0211: setUpClass() requires no arguments
-
 class TestFile(TestCase):
-    def setUpClass():
-        for fn2 in REMOVE_ON_START:
-            if path.isfile(fn2):
-                os.remove(fn2)
-
     def file_test(self, fn1, fn2):
         with open(fn1, encoding='utf8') as f:
             source = f.read(-1)
-        expr = parse(source, fn1)
-        new = expr.asPython()
+        expr1 = parse(source, fn1)
+        new = expr1.asPython()
         with open(fn2, 'w', encoding='utf8') as f:
             f.write(new)
+        self.assertEqual(source, new)
         expr2 = parse(new, fn2)
-        self.assertEqual(expr, expr2)
-        self.assertEqual(new, expr2.asPython())
+        self.assertEqual(expr1, expr2)
 
-# Discover path names to test
-PATH_SRC = path.abspath('../astley')
-DIRS = {'astley', 'tests', 'nodes'}
-PATH_MOD = path.join(PATH_SRC, '_test')
-
-REMOVE_ON_START = []
-for dirpath, dirnames, filenames in os.walk(PATH_SRC, topdown=True):
-    dirnames[:] = list(set(dirnames) & DIRS)
-    dir_rel = path.relpath(dirpath, PATH_SRC)
-    for dn in dirnames:
-        dn2 = path.join(PATH_MOD, dir_rel, dn)
-        os.makedirs(dn2, exist_ok=True)
-
-    for fn in filenames:
-        if not fn.endswith('.py'):
+# Append each example*.py file to TestCase
+TESTS_PATH = path.dirname(__file__)
+for name in os.listdir(TESTS_PATH):
+    if name.startswith('sample') and name.endswith('.py'):
+        major, minor = name[7:-3].split('_')
+        if (int(major), int(minor)) > version_info:
+            # sample is for newer Python
             continue
-
-        fn_rel = path.join(dir_rel, fn)
-        fn1 = path.join(PATH_SRC, fn_rel)
-        fn2 = path.join(PATH_MOD, fn_rel)
-        REMOVE_ON_START.append(fn2)
-        test_name = 'test_' + fn_rel.replace(os.sep, '_').replace('.py', '')
-        closure_fix = lambda fn1, fn2: lambda s: s.file_test(fn1, fn2)
+        test_name = 'test_sample_{}_{}'.format(major, minor)
+        name2 = name.replace('sample_', 'result_')
+        fn1 = path.abspath(path.join(TESTS_PATH, name))
+        fn2 = path.abspath(path.join(TESTS_PATH, name2))
+        closure_fix = lambda *a: lambda s: s.file_test(*a)
         setattr(TestFile, test_name, closure_fix(fn1, fn2))

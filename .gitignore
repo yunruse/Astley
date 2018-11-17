@@ -4,4 +4,4 @@ __pycache__/
 *$py.class
 
 # development
-_test/
+tests/result_*.py
