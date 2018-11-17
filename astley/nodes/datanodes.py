@@ -38,9 +38,9 @@ class withitem(_ast.withitem, Alias):
     _defaults = {"optional_vars": None}
     def asPython(self):
         expr = self.context_expr.asPython()
-        alias = getattr(self, 'optional_vars', '')
+        alias = getattr(self, 'optional_vars', None)
         if alias:
-            return expr + " as " + alias
+            return expr + " as " + alias.asPython()
         else:
             return expr
 
