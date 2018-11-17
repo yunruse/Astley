@@ -11,7 +11,7 @@ class Äpfelstraße(Street, α=β, γ=lambda x: x & x | x ^ x):
         """Docstring"""
     def function2(self, a, *args, key: set = {1, 2}, **kwarg):
         raise ValueError('This is test syntax')
-    def function3(self, *, a=(g for g in 'genexp' if g), **kw):
+    def function3(self, *, a=(g for g in "genexp" if g), **kw):
         global Street
         with open(__file__) as f:
             for i in f.readlines():
