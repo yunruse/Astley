@@ -37,6 +37,14 @@ class CodeDisplay:
 
 class Node:
     sym = ""
+    _defaults = {}
+    def __getattr__(self, attr):
+        if attr in self._defaults:
+            return self._defaults[attr]
+        else:
+            raise AttributeError('{} has no attribute {!r}'.format(
+                type(self).__name__, attr
+            ))
 
     def __init__(self, *args, **kw):
         if not args or kw:
