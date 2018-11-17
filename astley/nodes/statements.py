@@ -60,15 +60,22 @@ class Yield(_ast.Yield, Oneliner):
     sym = 'yield'
 class YieldFrom(_ast.YieldFrom, Oneliner):
     sym = 'yield from'
-class Global(_ast.Global, Oneliner):
-    sym = 'global'
-class Nonlocal(_ast.Nonlocal, Oneliner):
-    sym = 'nonlocal'
+
 class Delete(_ast.Delete, Oneliner):
     _fields = 'targets'.split()
     def asPython(self):
         targets = getattr(self, 'targets', [])
         return 'del ' + ', '.join(i.asPython() for i in targets)
+
+class VarContextStmt(Oneliner):
+    _fields = 'names'.split()
+    def asPython(self):
+        return self.sym + ' ' + ', '.join(self.names)
+
+class Global(_ast.Global, VarContextStmt):
+    sym = 'global'
+class Nonlocal(_ast.Nonlocal, VarContextStmt):
+    sym = 'nonlocal'
 
 class Assert(_ast.Assert, Oneliner):
     def asPython(self):
