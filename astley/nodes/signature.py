@@ -43,7 +43,7 @@ class arguments(_ast.arguments, Datanode):
                 ann = getattr(arg, "annotation", None)
 
                 if ann is not None:
-                    word += ': {}'.format(ann)
+                    word += ': {}'.format(ann.asPython())
                     if defa is not None:
                         word += ' = ' + defa
                 else:
