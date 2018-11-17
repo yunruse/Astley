@@ -57,8 +57,21 @@ class FormattedValue(_ast.FormattedValue, Datanode):
 
 class comprehension(_ast.comprehension, Datanode):
     """Iterator and targets in comprehenson expressions"""
-    sym = "{self._async}for {self.target} in {self.iter}"
-    _async = property(lambda s: "async " * getattr(s, 'is_async', False))
+    _fields = 'target iter ifs is_async'.split()
+    _defaults = {'ifs': [], 'is_async': False}
+    def asPython(self):
+        text = "for {} in {}".format(
+            self.target.asPython(),
+            self.iter.asPython()
+        )
+        if getattr(self, 'is_async', False):
+            text = 'async ' + text
+        ifs = getattr(self, 'ifs', [])
+        if ifs:
+            text += ' ' + ' '.join(
+                'if ' + a.asPython() for a in ifs
+            )
+        return text
 
 class SliceKind(Datanode):
     pass
