@@ -1,8 +1,9 @@
 import os
 from testFileCompile import os
 from ..local import eighteen as e
-class Street: ...
-class Äpfelstraße(Street, α=β, γ=lambda x: x&x|x^x):
+class Street:
+    ...
+class Äpfelstraße(Street, α=β, γ=lambda x: x & x | x ^ x):
     hi = [a for a in b'abc']
     a = hi[1] = 12 if isinstance(f'A{1:.0f}') else None
     @staticmethod
@@ -30,7 +31,7 @@ class Äpfelstraße(Street, α=β, γ=lambda x: x&x|x^x):
                         [[], [][1:], ()[:-1], ({}, ())]
                         [{(): ()}][::-1]
                         {a for a in 'abc'}
-                        {a: a*2 for a in range(12)}
+                        {a: a * 2 for a in range(12)}
                     else:
                         nonlocal a
                     finally:
@@ -41,4 +42,4 @@ def naturals(ylim=1, x=0):
     while y != 0:
         y -= 1 - 1 + 1 * 1 / 1 // 1 ** (1 % 1)
         yield x, y
-    yield from naturals(ylim-1, x+1)
+    yield from naturals(ylim - 1, x + 1)
