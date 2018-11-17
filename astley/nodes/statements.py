@@ -253,7 +253,7 @@ class Try(_ast.Try, Block):
             if exc.type:
                 body += ' ' + exc.type.asPython()
             if exc.name:
-                body += ' as ' + exc.name.asPython()
+                body += ' as ' + exc.name
             body += ':\n' + bodyfmt(exc.body, indent+1)
 
         e, f = getattr(self, 'orelse', None), getattr(self, 'finalbody', None)
