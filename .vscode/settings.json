@@ -11,6 +11,6 @@
     "python.unitTest.unittestEnabled": true,
     "python.formatting.provider": "black",
     "python.linting.ignorePatterns": [
-        "_test_astley/*.py",
+        "_test/*.py",
     ]
 }
