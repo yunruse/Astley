@@ -47,6 +47,7 @@ class withitem(_ast.withitem, Alias):
 class FormattedValue(_ast.FormattedValue, Datanode):
     """String and formatting used in f-string"""
     _fields = 'value format_spec'.split()
+    _defaults = {'format_spec': ''}
     def asPython(self):
         n, fs = (getattr(self, i, None) for i in self._fields)
         n = n.asPython()
