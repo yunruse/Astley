@@ -75,52 +75,74 @@ class Expr(expr, _ast.Expr):
 class Name(expr, _ast.Name):
     _defaults = {'ctx': load}
     sym = '{self.id}'
-
 class NameS(Name):
     _defaults = {'ctx': store}
+
+def stringFormat(string, sep="'"):
+    """repr(str) with your choice of separator.
+    No guarantees it will work beyond internal usage.
+    """
+    if sep not in ("'", '"', '"""', "'''"):
+        raise ValueError('Invalid separator.')
+
+    isBytes = isinstance(string, bytes)
+
+    asRepr = repr(string)[int(isBytes):-1]
+    oldSep = asRepr[0]
+    asRepr = asRepr[1:]
+
+    if oldSep != sep:
+        asRepr = asRepr.replace('\\' + oldSep, oldSep).replace(sep, '\\' + sep)
+        if sep in ('"""', "'''"):
+            asRepr = asRepr.replace('\\n', '\n')
+
+    return 'b' * isBytes + sep + asRepr + sep
+
+
+class Constant(expr, _ast.Constant):
+    '''Constant value: number, ellipsis, string or bytes. Used in 3.8+.'''
+    __fields__ = ('value', )
+    def asPython(self):
+        if isinstance(self.value, (str, bytes)):
+            return stringFormat(self.value, '"')
+        elif self.value is None:
+            return 'None'
+        else:
+            return repr(self.value)
+
 class NameConstant(expr, _ast.NameConstant):
-    '''Keyword name, such as True, False, None'''
+    '''Keyword literal: True, False, None'''
     def asPython(self):
         return str(self.value)
-class Constant(expr, _ast.Constant):
-    sym = '{self.value}'
+
 class Num(expr, _ast.Num):
+    '''Numerical literal of type int, float or complex.'''
     sym = '{self.n}'
+
 class Ellipsis(expr, _ast.Ellipsis):
     sym = '...'
 
 class Str(expr, _ast.Str):
-    def asFmt(self, sep="'"):
-        """repr(str) with your choice of separator. Not complete.
-        """
-        if sep not in ("'", '"', '"""', "'''"):
-            raise ValueError('Invalid separator.')
-
-        asRepr = repr(self.s)[:-1]
-        oldSep = asRepr[0]
-        asRepr = asRepr[1:]
-
-        if oldSep != sep:
-            asRepr = asRepr.replace('\\' + oldSep, oldSep).replace(sep, '\\' + sep)
-            if sep in ('"""', "'''"):
-                asRepr = asRepr.replace('\\n', '\n')
-
-        return sep + asRepr + sep
-
+    __fields__ = ('s', )
     def asPython(self):
-        return self.asFmt(sep='"')
+        return stringFormat(self.s, sep='"')
 
 class Bytes(expr, _ast.Bytes):
-    sym = '{self.s!r}'
+    __fields__ = ('s', )
+    def asPython(self):
+        return stringFormat(self.s, sep='"')
 
 class JoinedStr(expr, _ast.JoinedStr):
-    def asRaw(self):
-        return ''.join(
-            i.s if isinstance(i, Str) else i.asPython()
-            for i in self.values)
-
     def asPython(self):
-        return 'f' + repr(self.asRaw())
+        body = ''
+        for i in self.values:
+            if isinstance(i, Str):
+                body += i.s
+            elif isinstance(i, Constant) and isinstance(i.value, str):
+                body += i.value
+            else:
+                body += i.asPython()
+        return 'f' + repr(body)
 
 class Subscript(expr, _ast.Subscript):
     _fields = 'value slice ctx'.split()
@@ -150,7 +172,9 @@ class Lambda(functionKind, expr, _ast.Lambda):
 class Iterable(expr):
     @property
     def _elts(self):
-        return ', '.join(i.asPython() for i in self.elts)
+        e = ', '.join(i.asPython() for i in self.elts)
+        print(self, self.elts, e)
+        return e
 
 class List(Iterable, _ast.List):
     sym = '[{self._elts}]'

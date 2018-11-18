@@ -52,7 +52,9 @@ class FormattedValue(_ast.FormattedValue, Datanode):
         value = self.value.asPython()
         fmt = self.format_spec
         if fmt:
-            value += ":" + str(fmt.asRaw())
+            # Formats are also f-strings
+            print(fmt)
+            value += ":" + fmt.asPython()[2:-1]
         return "{" + value + "}"
 
 class comprehension(_ast.comprehension, Datanode):
@@ -79,9 +81,10 @@ class Index(_ast.Index, SliceKind):
     sym = "{self.value}"
 
 class Slice(_ast.Slice, SliceKind):
-    sym = "{self.lower}:{self.upper}{self._step}"
+    sym = "{self.lower}:{self.upper}:{self.step}"
     @property
     def _step(self):
-        if self.step:
+        print(self, self.step)
+        if self.step is not None:
             return ':' + self.step.asPython()
         return ''

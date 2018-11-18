@@ -4,7 +4,8 @@
 # it relies on .expressions, which relies on .
 
 from _ast import AST
-from .nodes import Num, Str, Name, NameConstant
+from .nodes import Constant, Bytes, Num, Str, Name, NameConstant
+from sys import version_info
 
 NODE_ONLY_FIELDS = "body value left right".split()
 
@@ -15,16 +16,26 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
     Fixes line numbers (similar to ast.fix_missing_locations),
     provides node defaults, and serialises literals to their node form.
     """
-    if isinstance(node, bool):
+    if version_info >= (3, 8) and isinstance(
+            node, (bool, int, float, complex, str, bytes)):
+        return Constant(node)
+
+    elif isinstance(node, bool):
         return NameConstant(node)
-    if isinstance(node, (int, float)):
+    elif isinstance(node, (int, float, complex)):
         return Num(node)
     elif isinstance(node, str):
         return Str(node)
+    elif isinstance(node, bytes):
+        return Bytes(node)
+
     elif callable(node) and hasattr(node, '__name__'):
+        # Allow functions to be placed in - a little unreliable?
         return Name(node.__name__)
+
     elif isinstance(node, (list, tuple)):
-        return type(node)(finalise(n, lineno, col_offset, _lvl) for n in node)
+        # We assume the user will use List() and Tuple() for actual usages
+        return list(finalise(n, lineno, col_offset, _lvl) for n in node)
     elif isinstance(node, AST):
         # Copy line and column data
         if 'lineno' in node._attributes:

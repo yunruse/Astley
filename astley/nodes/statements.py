@@ -5,7 +5,7 @@ import _ast
 from ..node import copy
 from ..finalise import finalise
 from . import Node, Module
-from .expressions import Str, Expr
+from .expressions import Str, Expr, stringFormat
 from .datanodes import Datanode
 from .signature import arguments
 
@@ -121,7 +121,7 @@ def _display(item, indent=0):
 def bodyfmt(body, indent=0):
     if body and isinstance(body[0], Expr) and isinstance(body[0].value, Str):
         # docstring
-        body[0] = body[0].value.asFmt('"""')
+        body[0] = stringFormat(body[0].value, '"""')
     return '\n'.join(_display(i, indent) for i in body)
 
 class If(_ast.If, Block):
