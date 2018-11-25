@@ -1,37 +1,37 @@
 # Astley
 
-Astley is an enhancement to Python's `ast` module, keeping full compatability. It currently offers:
+Astley is a module designed for manipulating Python's Abstract Syntax tree. It features:
 
-* Extended nodes, allowing for easy code creation with familiar syntax;
-* `Language`, an extended version of `NodeTransformer`.
+* An extended node syntax, allowing for nodes to be created via (mostly) native syntax;
+* `match`, `Rule` and `Ruleset` objects for easier transformation of nodes;
+* The ability to print out nodes as Python code - useful for transpilation.
 
-Currently, Astley is still in development, so it promises no compatability to versions other than Python 3.7. Please submit any bugs with 3.7 on the tracker.
+Currently, Astley is still in early stages of development, so it promises no stability other than that its unit tests should *probably* pass. 
 
 ## Usage
 
 ```python
 
-import astley as ast
-code = 'f(x**2 + y, end="!")'
-node1 = ast.parse(code, mode='eval')
-print(node1) # f(x ** 2 + y, end='!')
-f, x, y = map(ast.Name, 'fxy')
-node2 = f(x**2 + y, end="!")
-print(node2) # f(x ** 2 + y, end='!')
+>>> import astley as ast
+>>> code = 'f(x**2 + y, end="!")'
+>>> node1 = astley.parse(code, mode='eval')
+>>> f, x, y = map(astley.Name, 'fxy')
+>>> node2 = f(x**2 + y, end="!")
+>>> print(node1.asPython(), node2.asPython())
+f(x ** 2 + y, end='!') f(x ** 2 + y, end='!')
 
-f, x, y = print, 10, 4
-node1.eval(locals()) # 116!
-node2 = ast.copyfix(node1, node2)
-node2.eval(locals()) # 116!
+>>> f, x, y = print, 10, 4
+>>> node2.eval(locals())
+104!
 ```
 
 ## Legal
 
-Copyright (c) Jack Dobson (yunru.se) 2018.
+Copyright (c) Jack Dobson ([yunruse]) 2018.
 
 This work is licensed under a Creative Commons Attribution 4.0 International
 license. In non-legal terms: do whatever you like, but credit me.
-
 The full license is available here:
 https://creativecommons.org/licenses/by/4.0/
 
+[yunruse]: https://yunru.se/
