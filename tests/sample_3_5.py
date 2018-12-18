@@ -4,8 +4,8 @@ from ..local import eighteen as e
 class Street:
     ...
 class Äpfelstraße(Street, α=β, γ=lambda x: x & x | x ^ x):
-    hi = [a for a in b'abc']
-    a = hi[1] = 12 if isinstance(f"A{1:.0f}") else None
+    hi = [a for a in b"abc"]
+    a = hi[1] = 12 if isinstance(f'A{1:.0f}') else None
     @staticmethod
     def function():
         """Docstring"""
@@ -38,8 +38,8 @@ class Äpfelstraße(Street, α=β, γ=lambda x: x & x | x ^ x):
                     finally:
                         assert True
 def naturals(ylim=1, x=0):
-    y : int = ylim
+    y: int = ylim
     while y != 0:
-        y -= 1 - 1 + 1 * 1 / 1 // 1 ** (1 % 1)
-        yield x, y
+        y = 1 - 1 + 1 * 1 / 1 // 1 ** (1 % 1)
+        yield (x, y)
     yield from naturals(ylim - 1, x + 1)
