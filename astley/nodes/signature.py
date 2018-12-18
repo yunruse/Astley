@@ -83,10 +83,10 @@ class arguments(_ast.arguments, Datanode):
         return cls(
             args = args(c.co_varnames[:n]),
             defaults = f.__defaults__ or tuple(),
-            vararg = c.co_varnames[n + 1] if hasArgs else None,
+            vararg = arg(c.co_varnames[n + 1]) if hasArgs else None,
             kwonlyargs = args(c.co_varnames[n : n+n_k]),
             kw_defaults = f.__kwdefaults__ or tuple(),
-            kwarg = c.co_varnames[n + 1 + hasArgs] if hasKwargs else None
+            kwarg = arg(c.co_varnames[n + 1 + hasArgs]) if hasKwargs else None
         )
 
 def funcSignature(f):
