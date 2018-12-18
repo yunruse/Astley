@@ -81,7 +81,7 @@ class Index(_ast.Index, SliceKind):
     sym = "{self.value}"
 
 class Slice(_ast.Slice, SliceKind):
-    sym = "{self.lower}:{self.upper}:{self.step}"
+    sym = "{self.lower}:{self.upper}{self._step}"
     @property
     def _step(self):
         print(self, self.step)
