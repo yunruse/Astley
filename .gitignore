@@ -5,3 +5,4 @@ __pycache__/
 
 # development
 tests/result_*.py
+*.docx
