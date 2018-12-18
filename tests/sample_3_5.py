@@ -30,7 +30,7 @@ class Äpfelstraße(Street, α=β, γ=lambda x: x & x | x ^ x):
                     except:
                         (1, 2, 3)
                         [[], [][1:], ()[:1], ({}, ())]
-                        [{(): ()}][::-1]
+                        [{(): ()}][::-1] + [][:]
                         {a for a in "abc"}
                         {a: a * 2 for a in range(12)}
                     else:
