@@ -119,9 +119,11 @@ def _display(item, indent=0):
         return ' ' * 4 * indent + item
 
 def bodyfmt(body, indent=0):
-    if body and isinstance(body[0], Expr) and isinstance(body[0].value, Str):
-        # docstring
-        body[0] = stringFormat(body[0].value, '"""')
+    if body and isinstance(body[0], Expr):
+        q = body[0].value
+        if isinstance(q, Str):
+            # Docstring
+            body[0] = stringFormat(q.s, '"""')
     return '\n'.join(_display(i, indent) for i in body)
 
 class If(_ast.If, Block):
