@@ -13,6 +13,8 @@ __all__ = [
 
 class OpKind(kind):
     """Operator kind."""
+    def asPython(self):
+        return self.symbol
 
 class boolop(_ast.boolop, OpKind):
     def __new__(cls, values=None):
@@ -140,7 +142,7 @@ class BoolOp(OpApplier, _ast.BoolOp):
 
 class UnaryOp(OpApplier, _ast.UnaryOp):
     '''Unary prefix operator.'''
-    sym = "{self.op.sym}{self.operand}"
+    sym = "{self.op}{self.operand}"
 
 class Compare(OpApplier, _ast.Compare):
     '''Chain of comparators.'''
