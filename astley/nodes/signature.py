@@ -21,7 +21,7 @@ class arguments(_ast.arguments, Datanode):
         kwonlyargs=[], kw_defaults=[], kwarg=None
     )
 
-    def asPython(self):
+    def _asPython(self):
         n_required = len(self.args) - len(self.defaults)
         words = []
 

@@ -13,7 +13,7 @@ __all__ = [
 
 class OpKind(kind):
     """Operator kind."""
-    def asPython(self):
+    def _asPython(self):
         return self.symbol
 
 class boolop(_ast.boolop, OpKind):
@@ -108,7 +108,7 @@ requiresParentheses = (
 
 class BinOp(OpApplier, _ast.BinOp):
     '''Binary infix operator (+, -, and, etc) '''
-    def asPython(self):
+    def _asPython(self):
         # Add brackets to ensure cases such as '(a + b) * c'
         # are represented correctly
         pm = precedence[self.op.__class__.__name__]
@@ -129,7 +129,7 @@ class BinOp(OpApplier, _ast.BinOp):
 
 class BoolOp(OpApplier, _ast.BoolOp):
     '''Binary infix operator that works on booleans (and, or)'''
-    def asPython(self):
+    def _asPython(self):
         values = [i.asPython() for i in self.values]
         # try to map 'A and (B or C)' nicely
         if isinstance(self.op, _ast.Or):
@@ -147,7 +147,7 @@ class UnaryOp(OpApplier, _ast.UnaryOp):
 class Compare(OpApplier, _ast.Compare):
     '''Chain of comparators.'''
     _fields = 'left ops comparators'.split()
-    def asPython(self):
+    def _asPython(self):
         chain = [self.left.asPython()]
         for o, c in zip(self.ops, self.comparators):
             chain.append(o.symbol)

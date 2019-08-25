@@ -111,7 +111,10 @@ class Node:
             and (getattr(self, i, None) == getattr(other, i, None)
                  for i in self._fields))
 
-    def asPython(self, indent=1):
+    def asPython(self):
+        return self._asPython()
+
+    def _asPython(self, indent=1):
         return self.sym.format(self=CodeDisplay(self))
 
     def compile(self, filename=None):

@@ -20,7 +20,7 @@ class AssignKind(stmt):
 
 class Assign(_ast.Assign, AssignKind):
     '''Assignment of value(s)'''
-    def asPython(self):
+    def _asPython(self):
         return ' = '.join(i.asPython() for i in self.targets + [self.value])
 
 class AugAssign(_ast.AugAssign, AssignKind):
@@ -31,7 +31,7 @@ class AnnAssign(_ast.AnnAssign, AssignKind):
     '''Single-target type-annotated assignment'''
     _fields = 'target annotation value'.split()
     _defaults = {'value': None}
-    def asPython(self):
+    def _asPython(self):
         tgt = self.target.asPython()
         ann = self.annotation.asPython()
         if self.value:
@@ -59,12 +59,12 @@ class Raise(_ast.Raise, Oneliner):
 
 class Delete(_ast.Delete, Oneliner):
     _fields = 'targets'.split()
-    def asPython(self):
+    def _asPython(self):
         return 'del ' + ', '.join(i.asPython() for i in self.targets)
 
 class VarContextStmt(Oneliner):
     _fields = 'names'.split()
-    def asPython(self):
+    def _asPython(self):
         return self.sym + ' ' + ', '.join(self.names)
 
 class Global(_ast.Global, VarContextStmt):
@@ -73,7 +73,7 @@ class Nonlocal(_ast.Nonlocal, VarContextStmt):
     sym = 'nonlocal'
 
 class Assert(_ast.Assert, Oneliner):
-    def asPython(self):
+    def _asPython(self):
         code = 'assert ' + self.test.asPython()
         if self.msg:
             return code + ', ' + self.msg.asPython()
@@ -92,14 +92,14 @@ class Break(_ast.Break, Word):
 
 class Import(_ast.Import, stmt):
     _fields = 'names'.split()
-    def asPython(self):
+    def _asPython(self):
         return 'import {}'.format(
             ', '.join(i.asPython() for i in self.names))
 
 class ImportFrom(_ast.ImportFrom, Import):
     _fields = 'module names level'.split()
     _defaults = {'level': 0}
-    def asPython(self):
+    def _asPython(self):
         return 'from {}{} import {}'.format(
             '.' * self.level, self.module or '',
             ', '.join(i.asPython() for i in self.names))
@@ -129,7 +129,7 @@ def bodyfmt(body, indent=0):
 class If(_ast.If, Block):
     _fields = 'test body orelse'.split()
     _defaults = {'orelse': []}
-    def asPython(self, indent=0):
+    def _asPython(self, indent=0):
         tab = ' ' * 4 * indent
         body = tab + 'if {}:\n'.format(self.test.asPython())
         body += bodyfmt(self.body, indent+1)
@@ -150,14 +150,14 @@ class If(_ast.If, Block):
 
 class While(_ast.While, Block):
     _fields = 'test body'.split()
-    def asPython(self, indent=0):
+    def _asPython(self, indent=0):
         body = ' ' * 4 * indent + 'while {}:\n'.format(self.test.asPython())
         return body + bodyfmt(self.body, indent+1)
 
 class For(_ast.For, Block):
     _fields = 'test body'.split()
     _defaults = {'orelse': []}
-    def asPython(self, indent=0):
+    def _asPython(self, indent=0):
         tab = ' ' * 4 * indent
         body = tab + '{} {} in {}:\n'.format(
             self.symbol,
@@ -175,7 +175,7 @@ class AsyncFor(_ast.AsyncFor, For, AsyncBlock):
 
 class With(_ast.With, Block):
     symbol = 'with'
-    def asPython(self, indent=0):
+    def _asPython(self, indent=0):
         tab = ' ' * 4 * indent
         body = tab + 'with {}:\n'.format(', '.join(i.asPython() for i in self.items))
         return body + bodyfmt(self.body, indent+1)
@@ -214,7 +214,7 @@ class FunctionDef(_ast.FunctionDef, Definition):
             return cls(**kw)
         return wrapper
 
-    def asPython(self, indent=0):
+    def _asPython(self, indent=0):
         lines = ['@' + i.asPython() for i in self.decorator_list]
 
         returns = ''
@@ -231,7 +231,7 @@ class AsyncFunctionDef(_ast.AsyncFunctionDef, FunctionDef, AsyncBlock):
     symbol = 'async def'
 
 class ClassDef(_ast.ClassDef, Definition):
-    def asPython(self, indent=0):
+    def _asPython(self, indent=0):
         lines = ['@' + i.asPython() for i in self.decorator_list]
 
         p = ', '.join(
@@ -249,7 +249,7 @@ class ExceptHandler(_ast.ExceptHandler, Datanode):
 class Try(_ast.Try, Block):
     _fields = 'body handlers orelse finalbody'.split()
     _defaults = {'orelse': [], 'finalbody': []}
-    def asPython(self, indent=0):
+    def _asPython(self, indent=0):
         tab = ' ' * 4 * indent
         body = tab + 'try:\n'
         body += bodyfmt(self.body, indent+1)

@@ -12,7 +12,7 @@ class keyword(_ast.keyword, Datanode):
     """Keyword used in a Call."""
     _fields = 'arg value'.split()
     _defaults = {'arg': None}
-    def asPython(self):
+    def _asPython(self):
         val = self.value.asPython()
         if self.arg:
             return "{}={}".format(self.arg, val)
@@ -26,7 +26,7 @@ class alias(_ast.alias, Alias):
     """Aliases in an import"""
     _fields = "name asname".split()
     _defaults = {"asname": None}
-    def asPython(self):
+    def _asPython(self):
         if self.asname:
             return self.name + " as " + self.asname
         else:
@@ -36,7 +36,7 @@ class withitem(_ast.withitem, Alias):
     """Aliases in a With block"""
     _fields = "context_expr optional_vars".split()
     _defaults = {"optional_vars": None}
-    def asPython(self):
+    def _asPython(self):
         expr = self.context_expr.asPython()
         alias = self.optional_vars
         if alias:
@@ -48,7 +48,7 @@ class FormattedValue(_ast.FormattedValue, Datanode):
     """String and formatting used in f-string"""
     _fields = 'value format_spec'.split()
     _defaults = {'format_spec': ''}
-    def asPython(self):
+    def _asPython(self):
         value = self.value.asPython()
         fmt = self.format_spec
         if fmt:
@@ -61,7 +61,7 @@ class comprehension(_ast.comprehension, Datanode):
     """Iterator and targets in comprehenson expressions"""
     _fields = 'target iter ifs is_async'.split()
     _defaults = {'ifs': [], 'is_async': False}
-    def asPython(self):
+    def _asPython(self):
         text = "for {} in {}".format(
             self.target.asPython(),
             self.iter.asPython()

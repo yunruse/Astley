@@ -20,7 +20,7 @@ is_inv = match(kind=UInv)
 
 class Chain(CustomNode):
     _fields = 'op operands'.split()
-    def asPython(self):
+    def _asPython(self):
         text = ''
         ops = sorted(self.operands, key=is_neg | is_inv, reverse=True)
         isAdd = isinstance(self.op, Add)
