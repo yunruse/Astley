@@ -112,7 +112,7 @@ class Node:
                  for i in self._fields))
 
     def asPython(self):
-        return self._asPython()
+        return finalise(self)._asPython()
 
     def _asPython(self, indent=1):
         return self.sym.format(self=CodeDisplay(self))
@@ -145,6 +145,7 @@ def modify(node):
     else:
         return node
 
-# Yes, I am importing at the bottom. This helps bootstrap the node-nodes-node loop.
-# Just... don't ask, okay?
+# Name mangling (interdependant functions)
+
 from . import nodes
+from .finalise import finalise
