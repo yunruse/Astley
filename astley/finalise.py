@@ -64,7 +64,7 @@ def _finalise(node, lineno=1, col_offset=0, _lvl=0):
             # Convert tuple-fields into lists
             if isinstance(field, tuple):
                 field = list(field)
-            if isinstance(field, (list, AST)) or field in NODE_ONLY_FIELDS:
+            if isinstance(field, (list, AST)) or name in NODE_ONLY_FIELDS:
                 setattr(node, name, _finalise(field, lineno, col_offset, _lvl+1))
 
     return node
