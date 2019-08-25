@@ -125,7 +125,7 @@ class Node:
         globals = globals or _globals()
         locals = locals or dict()
         locals.update(kw)
-        bytecode = self.compile()
+        bytecode = finalise(self).compile('<astley>')
         return func(bytecode, globals or _globals(), locals)
 
     def eval(self, globals=None, locals=None, **kw):
