@@ -4,7 +4,7 @@ from _ast import AST
 # pylint: disable=E1101
 # E1101: node.attr
 
-_locals, _globals = locals, globals
+_globals = globals
 
 __all__ = "copy parse Node".split()
 
@@ -120,18 +120,21 @@ class Node:
     def compile(self, filename=None):
         """Return compiled code version of node."""
         raise TypeError("Node is not a code segment.")
+       
+    def _result(self, func, globals=None, locals=None, **kw):
+        globals = globals or _globals()
+        locals = locals or dict()
+        locals.update(kw)
+        bytecode = self.compile()
+        return func(bytecode, globals or _globals(), locals)
 
     def eval(self, globals=None, locals=None, **kw):
         """Evaluate and return expression given globals and locals."""
-        locals = locals or dict()
-        locals.update(kw)
-        return eval(self.compile(), globals or _globals(), locals)
+        return self._result(eval, globals, locals, **kw)
 
     def exec(self, globals=None, locals=None, **kw):
         """Execute node given globals and locals."""
-        locals = locals or dict()
-        locals.update(kw)
-        exec(self.compile(), globals or _globals(), locals)
+        return self._result(exec, globals, locals, **kw)
 
 
 def modify(node):
