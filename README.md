@@ -14,8 +14,8 @@ Currently, Astley is still in early stages of development, so it promises no sta
 
 >>> import astley as ast
 >>> code = 'f(x**2 + y, end="!")'
->>> node1 = astley.parse(code, mode='eval')
->>> f, x, y = map(astley.Name, 'fxy')
+>>> node1 = ast.parse(code, mode='eval')
+>>> f, x, y = map(ast.Name, 'fxy')
 >>> node2 = f(x**2 + y, end="!")
 >>> print(node1.asPython(), node2.asPython())
 f(x ** 2 + y, end='!') f(x ** 2 + y, end='!')
