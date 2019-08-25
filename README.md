@@ -10,6 +10,8 @@ Currently, Astley is still in early stages of development, so it promises no sta
 
 ## Usage
 
+Create code with native syntax:
+
 ```python
 
 >>> import astley as ast
@@ -20,8 +22,7 @@ Currently, Astley is still in early stages of development, so it promises no sta
 >>> print(node1.asPython(), node2.asPython())
 f(x ** 2 + y, end='!') f(x ** 2 + y, end='!')
 
->>> f, x, y = print, 10, 4
->>> node2.eval(locals())
+>>> node2.eval(f=print, x=10, y=4)
 104!
 ```
 
