@@ -1,5 +1,8 @@
 """Base Node (= AST) class which all nodes inherit from."""
 
+import os
+import tempfile
+
 from _ast import AST
 # pylint: disable=E1101
 # E1101: node.attr
@@ -121,20 +124,45 @@ class Node:
         """Return compiled code version of node."""
         raise TypeError("Node is not a code segment.")
        
-    def _result(self, func, globals=None, locals=None, **kw):
+    def _result(self, func, globals=None, locals=None, traceback=True, **kw):
         globals = globals or _globals()
         locals = locals or dict()
         locals.update(kw)
-        bytecode = finalise(self).compile('<astley>')
-        return func(bytecode, globals or _globals(), locals)
+        if traceback:
+            code = self.asPython()
+            node = parse(code)
+            tmp = tempfile.NamedTemporaryFile('w', delete=False, suffix='.py')
+            with tmp as f:
+                f.write(code)
+            try:
+                result = func(node.compile(f.name), globals, locals)
+            except Exception as e:
+                tb = e.__traceback__
+                # todo: erase Astley tracebacks
+                raise e
+            
+            os.remove(f.name)
+            
+            return result
+            
+        else:
+            return func(finalise(self).compile('<astley>'), globals, locals)
 
-    def eval(self, globals=None, locals=None, **kw):
-        """Evaluate and return expression given globals and locals."""
-        return self._result(eval, globals, locals, **kw)
+    def eval(self, globals=None, locals=None, traceback=True, **kw):
+        """
+        Evaluate and return expression given globals and locals.
+        
+        If traceback is True, a temporary file is created for more convenient
+        traceback with pre-formatted code.
+        Set this to false to increase speed.
+        """
+        return self._result(eval, globals, locals, traceback, **kw)
 
-    def exec(self, globals=None, locals=None, **kw):
-        """Execute node given globals and locals."""
-        return self._result(exec, globals, locals, **kw)
+    def exec(self, globals=None, locals=None, traceback=True, **kw):
+        """
+        Execute node given globals and locals. See .eval for more details.
+        """
+        self._result(exec, globals, locals, traceback, **kw)
 
 
 def modify(node):
