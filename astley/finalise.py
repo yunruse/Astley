@@ -9,13 +9,17 @@ from sys import version_info
 
 NODE_ONLY_FIELDS = "body value left right".split()
 
-def finalise(node, lineno=1, col_offset=0, _lvl=0):
+
+def finalise(node):
     """
     Finalise a node for use in non-Astley contexts.
 
     Fixes line numbers (similar to ast.fix_missing_locations),
     provides node defaults, and serialises literals to their node form.
     """
+    return _finalise(node)
+
+def finalise(node, lineno=1, col_offset=0, _lvl=0):
     if version_info >= (3, 8) and isinstance(
             node, (bool, int, float, complex, str, bytes)):
         return Constant(node)
@@ -35,7 +39,7 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0):
 
     elif isinstance(node, (list, tuple)):
         # We assume the user will use List() and Tuple() for actual usages
-        return list(finalise(n, lineno, col_offset, _lvl) for n in node)
+        return list(_finalise(n, lineno, col_offset, _lvl) for n in node)
     elif isinstance(node, AST):
         # Copy line and column data
         if 'lineno' in node._attributes:
@@ -61,7 +65,6 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0):
             if isinstance(field, tuple):
                 field = list(field)
             if isinstance(field, (list, AST)) or field in NODE_ONLY_FIELDS:
-                setattr(node, name, finalise(field, lineno, col_offset, _lvl+1))
-
+                setattr(node, name, _finalise(field, lineno, col_offset, _lvl+1))
 
     return node
