@@ -72,7 +72,7 @@ class Node:
             for name, val in kwargs.items():
                 setattr(self, name, val)
 
-    def _repr(self, nodesLeftToDisplay=-1, showAttributes=True, asTree=False):
+    def display(self, nodesLeftToDisplay=-1, showAttributes=True, asTree=False):
         if asTree and not nodesLeftToDisplay:
             return '@'
 
@@ -82,10 +82,10 @@ class Node:
             if v is None:
                 continue
             elif isinstance(v, Node):
-                v = v._repr(nodesLeftToDisplay - 1, True, asTree)
+                v = v.display(nodesLeftToDisplay - 1, True, asTree)
             elif isinstance(v, (tuple, list)):
                 v = "[{}]".format(', '.join(
-                    i._repr(nodesLeftToDisplay - 1, True, asTree)
+                    i.display(nodesLeftToDisplay - 1, True, asTree)
                     if isinstance(i, Node) else repr(i)
                     for i in v
                 ))
@@ -101,10 +101,10 @@ class Node:
         return "{}({})".format(self.__class__.__name__, args)
 
     def __repr__(self):
-        return self._repr(1, False)
+        return self.display(1, False)
 
     def __str__(self):
-        return self._repr(-1)
+        return self.display(-1)
 
     def __eq__(self, other):
         return (self._fields == other._fields
