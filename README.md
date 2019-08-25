@@ -27,7 +27,7 @@ f(x ** 2 + y, end='!') f(x ** 2 + y, end='!')
 
 ## Legal
 
-Copyright (c) Jack Dobson ([yunruse]) 2018.
+Copyright (c) Mia Dobson ([yunruse]) 2019.
 
 This work is licensed under a Creative Commons Attribution 4.0 International
 license. In non-legal terms: do whatever you like, but credit me.
