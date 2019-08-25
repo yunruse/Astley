@@ -19,7 +19,7 @@ def finalise(node):
     """
     return _finalise(node)
 
-def finalise(node, lineno=1, col_offset=0, _lvl=0):
+def _finalise(node, lineno=1, col_offset=0, _lvl=0):
     if version_info >= (3, 8) and isinstance(
             node, (bool, int, float, complex, str, bytes)):
         return Constant(node)
