@@ -9,7 +9,7 @@ from sys import version_info
 
 NODE_ONLY_FIELDS = "body value left right".split()
 
-def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
+def finalise(node, lineno=1, col_offset=0, _lvl=0):
     """
     Finalise a node for use in non-Astley contexts.
 
@@ -55,11 +55,6 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
             if not hasattr(node, name):
                 setattr(node, name, field)
 
-        if printDebug:
-            nodeOld = node._repr(1, False, asTree=True)
-            sep = max(0, _lvl-1) * '  ' + '\\ ' if _lvl else ''
-            print(sep + nodeOld)
-
         for name in node._fields:
             field = getattr(node, name, None)
             # Convert tuple-fields into lists
@@ -69,8 +64,4 @@ def finalise(node, lineno=1, col_offset=0, _lvl=0, printDebug=False):
                 setattr(node, name, finalise(field, lineno, col_offset, _lvl+1))
 
 
-        if printDebug:
-            nodeNew = node._repr(1, False, asTree=True)
-            if nodeNew != nodeOld:
-                repr(sep + nodeNew)
     return node
