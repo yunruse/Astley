@@ -147,7 +147,7 @@ class Ruleset(match, NodeTransformer):
     def _transform_round(self, node):
         rules_for = self.rules_for(node)
         if len(rules_for):
-            print(f"-- Round for {type(node).__name__} `{node.asPython()}`:")
+            print(f"-- Round for {type(node).__name__} `{node.as_python()}`:")
         for name, rule in rules_for:
             if rule.matches(node):
                 print('Matched', name)

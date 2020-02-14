@@ -17,14 +17,14 @@ class Expression(_ast.Expression, BaseNode):
         return compile(finalise(self), filename, 'eval')
 
 class Module(_ast.Module, BaseNode):
-    def _asPython(self, index=0):
+    def _as_python(self, index=0):
         return '\n'.join(
-            '   ' * index + stmt.asPython()
+            '   ' * index + stmt.as_python()
             for stmt in self.body)
     def compile(self, filename='<unknown>'):
         return compile(finalise(self), filename, 'exec')
 
-class functionKind(Node):
+class function_kind(Node):
     pass
 
 class kind(Node):

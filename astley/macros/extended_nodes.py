@@ -20,13 +20,13 @@ is_inv = match(kind=UInv)
 
 class Chain(CustomNode):
     _fields = 'op operands'.split()
-    def _asPython(self):
+    def _as_python(self):
         text = ''
         ops = sorted(self.operands, key=is_neg | is_inv, reverse=True)
-        isAdd = isinstance(self.op, Add)
-        isMul = isinstance(self.op, Mult)
+        is_add = isinstance(self.op, Add)
+        is_mul = isinstance(self.op, Mult)
         for a in ops:
-            if isAdd:
+            if is_add:
                 if is_neg(a):
                     a = a.operand
                     if text:
@@ -36,7 +36,7 @@ class Chain(CustomNode):
                 elif text:
                     text += ' + '
 
-            elif isMul:
+            elif is_mul:
                 if is_inv(a):
                     a = a.value
                     if text:
@@ -46,5 +46,5 @@ class Chain(CustomNode):
                 elif text:
                     text += ' * '
 
-            text += a.asPython()
+            text += a.as_python()
         return text.strip()

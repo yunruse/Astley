@@ -5,7 +5,7 @@ import _ast
 from ..node import copy
 from ..finalise import finalise
 from . import Node, Module
-from .expressions import Str, Expr, stringFormat
+from .expressions import Str, Expr, string_format
 from .datanodes import Datanode
 from .signature import arguments
 
@@ -20,8 +20,8 @@ class AssignKind(stmt):
 
 class Assign(_ast.Assign, AssignKind):
     '''Assignment of value(s)'''
-    def _asPython(self):
-        return ' = '.join(i.asPython() for i in self.targets + [self.value])
+    def _as_python(self):
+        return ' = '.join(i.as_python() for i in self.targets + [self.value])
 
 class AugAssign(_ast.AugAssign, AssignKind):
     '''Augmented in-place assignment (eg +=)'''
@@ -31,12 +31,12 @@ class AnnAssign(_ast.AnnAssign, AssignKind):
     '''Single-target type-annotated assignment'''
     _fields = 'target annotation value'.split()
     _defaults = {'value': None}
-    def _asPython(self):
-        tgt = self.target.asPython()
-        ann = self.annotation.asPython()
+    def _as_python(self):
+        tgt = self.target.as_python()
+        ann = self.annotation.as_python()
         if self.value:
             return '{}: {} = {}'.format(
-                tgt, ann, self.value.asPython())
+                tgt, ann, self.value.as_python())
         return '{}: {}'.format(tgt, ann)
 
 
@@ -59,12 +59,12 @@ class Raise(_ast.Raise, Oneliner):
 
 class Delete(_ast.Delete, Oneliner):
     _fields = 'targets'.split()
-    def _asPython(self):
-        return 'del ' + ', '.join(i.asPython() for i in self.targets)
+    def _as_python(self):
+        return 'del ' + ', '.join(i.as_python() for i in self.targets)
 
 class VarContextStmt(Oneliner):
     _fields = 'names'.split()
-    def _asPython(self):
+    def _as_python(self):
         return self.sym + ' ' + ', '.join(self.names)
 
 class Global(_ast.Global, VarContextStmt):
@@ -73,10 +73,10 @@ class Nonlocal(_ast.Nonlocal, VarContextStmt):
     sym = 'nonlocal'
 
 class Assert(_ast.Assert, Oneliner):
-    def _asPython(self):
-        code = 'assert ' + self.test.asPython()
+    def _as_python(self):
+        code = 'assert ' + self.test.as_python()
         if self.msg:
-            return code + ', ' + self.msg.asPython()
+            return code + ', ' + self.msg.as_python()
         else:
             return code
 
@@ -92,17 +92,17 @@ class Break(_ast.Break, Word):
 
 class Import(_ast.Import, stmt):
     _fields = 'names'.split()
-    def _asPython(self):
+    def _as_python(self):
         return 'import {}'.format(
-            ', '.join(i.asPython() for i in self.names))
+            ', '.join(i.as_python() for i in self.names))
 
 class ImportFrom(_ast.ImportFrom, Import):
     _fields = 'module names level'.split()
     _defaults = {'level': 0}
-    def _asPython(self):
+    def _as_python(self):
         return 'from {}{} import {}'.format(
             '.' * self.level, self.module or '',
-            ', '.join(i.asPython() for i in self.names))
+            ', '.join(i.as_python() for i in self.names))
 
 class Block(stmt):
     pass
@@ -112,10 +112,10 @@ class AsyncBlock(Block):
 
 def _display(item, indent=0):
     if isinstance(item, Block):
-        return item.asPython(indent)
+        return item.as_python(indent)
     else:
         if isinstance(item, Node):
-            item = item.asPython()
+            item = item.as_python()
         return ' ' * 4 * indent + item
 
 def bodyfmt(body, indent=0):
@@ -123,15 +123,15 @@ def bodyfmt(body, indent=0):
         q = body[0].value
         if isinstance(q, Str):
             # Docstring
-            body[0] = stringFormat(q.s, '"""')
+            body[0] = string_format(q.s, '"""')
     return '\n'.join(_display(i, indent) for i in body)
 
 class If(_ast.If, Block):
     _fields = 'test body orelse'.split()
     _defaults = {'orelse': []}
-    def _asPython(self, indent=0):
+    def _as_python(self, indent=0):
         tab = ' ' * 4 * indent
-        body = tab + 'if {}:\n'.format(self.test.asPython())
+        body = tab + 'if {}:\n'.format(self.test.as_python())
         body += bodyfmt(self.body, indent+1)
 
         # `elif` is just an If(orelse=If()), so we must navigate a chain
@@ -140,7 +140,7 @@ class If(_ast.If, Block):
             body += '\n' + tab
             if len(orelse) == 1 and isinstance(orelse[0], _ast.If):
                 newif = orelse[0]
-                body += 'elif {}:\n'.format(newif.test.asPython())
+                body += 'elif {}:\n'.format(newif.test.as_python())
                 body += bodyfmt(newif.body, indent+1)
                 orelse = newif.orelse
             else:
@@ -150,19 +150,19 @@ class If(_ast.If, Block):
 
 class While(_ast.While, Block):
     _fields = 'test body'.split()
-    def _asPython(self, indent=0):
-        body = ' ' * 4 * indent + 'while {}:\n'.format(self.test.asPython())
+    def _as_python(self, indent=0):
+        body = ' ' * 4 * indent + 'while {}:\n'.format(self.test.as_python())
         return body + bodyfmt(self.body, indent+1)
 
 class For(_ast.For, Block):
     _fields = 'test body'.split()
     _defaults = {'orelse': []}
-    def _asPython(self, indent=0):
+    def _as_python(self, indent=0):
         tab = ' ' * 4 * indent
         body = tab + '{} {} in {}:\n'.format(
             self.symbol,
-            self.target.asPython(),
-            self.iter.asPython())
+            self.target.as_python(),
+            self.iter.as_python())
         body += bodyfmt(self.body, indent+1)
         if self.orelse:
             body += '\n' + tab + 'else:\n'
@@ -175,9 +175,9 @@ class AsyncFor(_ast.AsyncFor, For, AsyncBlock):
 
 class With(_ast.With, Block):
     symbol = 'with'
-    def _asPython(self, indent=0):
+    def _as_python(self, indent=0):
         tab = ' ' * 4 * indent
-        body = tab + 'with {}:\n'.format(', '.join(i.asPython() for i in self.items))
+        body = tab + 'with {}:\n'.format(', '.join(i.as_python() for i in self.items))
         return body + bodyfmt(self.body, indent+1)
 
 class AsyncWith(With, AsyncBlock, _ast.AsyncWith):
@@ -192,11 +192,11 @@ class FunctionDef(_ast.FunctionDef, Definition):
     symbol = 'def'
 
     @classmethod
-    def withBody(cls, body, **kwargs):
+    def with_body(cls, body, **kwargs):
         '''Decorator to inherit a real Python function's properties.
 
         Use as:
-        @withBody(Return(Name('a') + Name('b'))):
+        @with_body(Return(Name('a') + Name('b'))):
         def add(a, b=2): ...
         '''
         wrapkw = cls._defaults.copy()
@@ -210,20 +210,20 @@ class FunctionDef(_ast.FunctionDef, Definition):
                 an = func.__annotations__
                 if 'return' in an:
                     kw['returns'] = an['return']
-            kw['args'] = arguments.fromFunction(func)
+            kw['args'] = arguments.from_function(func)
             return cls(**kw)
         return wrapper
 
-    def _asPython(self, indent=0):
-        lines = ['@' + i.asPython() for i in self.decorator_list]
+    def _as_python(self, indent=0):
+        lines = ['@' + i.as_python() for i in self.decorator_list]
 
         returns = ''
         if hasattr(self, 'returns') and self.returns:
-            returns = ' -> ' + self.returns.asPython()
+            returns = ' -> ' + self.returns.as_python()
 
         lines.append('{} {}({}){}:'.format(
             self.symbol, self.name,
-            self.args.asPython(), returns))
+            self.args.as_python(), returns))
 
         return bodyfmt(lines, indent) + '\n' + bodyfmt(self.body, indent+1)
 
@@ -231,11 +231,11 @@ class AsyncFunctionDef(_ast.AsyncFunctionDef, FunctionDef, AsyncBlock):
     symbol = 'async def'
 
 class ClassDef(_ast.ClassDef, Definition):
-    def _asPython(self, indent=0):
-        lines = ['@' + i.asPython() for i in self.decorator_list]
+    def _as_python(self, indent=0):
+        lines = ['@' + i.as_python() for i in self.decorator_list]
 
         p = ', '.join(
-            i.asPython() for i in self.bases + self.keywords).strip()
+            i.as_python() for i in self.bases + self.keywords).strip()
         if p:
             p = '('+p+')'
 
@@ -249,7 +249,7 @@ class ExceptHandler(_ast.ExceptHandler, Datanode):
 class Try(_ast.Try, Block):
     _fields = 'body handlers orelse finalbody'.split()
     _defaults = {'orelse': [], 'finalbody': []}
-    def _asPython(self, indent=0):
+    def _as_python(self, indent=0):
         tab = ' ' * 4 * indent
         body = tab + 'try:\n'
         body += bodyfmt(self.body, indent+1)
@@ -257,7 +257,7 @@ class Try(_ast.Try, Block):
         for exc in self.handlers:
             body += '\n' + tab + 'except'
             if exc.type:
-                body += ' ' + exc.type.asPython()
+                body += ' ' + exc.type.as_python()
             if exc.name:
                 body += ' as ' + exc.name
             body += ':\n' + bodyfmt(exc.body, indent+1)

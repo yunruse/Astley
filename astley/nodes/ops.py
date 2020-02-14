@@ -13,7 +13,7 @@ __all__ = [
 
 class OpKind(kind):
     """Operator kind."""
-    def _asPython(self):
+    def _as_python(self):
         return self.symbol
 
 class boolop(_ast.boolop, OpKind):
@@ -88,38 +88,38 @@ operators = dict(
 
 precedence = {}
 
-for opKind, ops in operators.items():
-    for nodeName, symbol, *r in ops:
+for op_kind, ops in operators.items():
+    for node_name, symbol, *r in ops:
         if len(r) == 2:
-            precedence[nodeName] = r[1]
+            precedence[node_name] = r[1]
 
         exec('class {0}(_ast.{0}, {2}): symbol = "{1}"'.format(
-             nodeName, symbol, opKind), globals())
-        __all__.append(nodeName)
+             node_name, symbol, op_kind), globals())
+        __all__.append(node_name)
 
 
 class OpApplier(expr):
     '''Node that applies an Op to some values.'''
     pass
 
-requiresParentheses = (
+requires_parentheses = (
     _ast.IfExp, _ast.Lambda, _ast.GeneratorExp
 )
 
 class BinOp(OpApplier, _ast.BinOp):
     '''Binary infix operator (+, -, and, etc) '''
-    def _asPython(self):
+    def _as_python(self):
         # Add brackets to ensure cases such as '(a + b) * c'
         # are represented correctly
         pm = precedence[self.op.__class__.__name__]
 
         def name(node):
-            name = node.asPython()
+            name = node.as_python()
             if isinstance(node, _ast.BinOp):
                 pinner = precedence[node.op.__class__.__name__]
                 if pm > pinner:
                     return '(' + name + ')'
-            elif isinstance(node, requiresParentheses):
+            elif isinstance(node, requires_parentheses):
                 return '(' + name + ')'
 
             return name
@@ -129,8 +129,8 @@ class BinOp(OpApplier, _ast.BinOp):
 
 class BoolOp(OpApplier, _ast.BoolOp):
     '''Binary infix operator that works on booleans (and, or)'''
-    def _asPython(self):
-        values = [i.asPython() for i in self.values]
+    def _as_python(self):
+        values = [i.as_python() for i in self.values]
         # try to map 'A and (B or C)' nicely
         if isinstance(self.op, _ast.Or):
             for i, v in enumerate(self.values):
@@ -138,7 +138,7 @@ class BoolOp(OpApplier, _ast.BoolOp):
                     self.values[i] = '(' + values[i] + ')'
 
         return (' ' + self.op.symbol + ' ').join(
-            i.asPython() for i in self.values)
+            i.as_python() for i in self.values)
 
 class UnaryOp(OpApplier, _ast.UnaryOp):
     '''Unary prefix operator.'''
@@ -147,11 +147,11 @@ class UnaryOp(OpApplier, _ast.UnaryOp):
 class Compare(OpApplier, _ast.Compare):
     '''Chain of comparators.'''
     _fields = 'left ops comparators'.split()
-    def _asPython(self):
-        chain = [self.left.asPython()]
+    def _as_python(self):
+        chain = [self.left.as_python()]
         for o, c in zip(self.ops, self.comparators):
             chain.append(o.symbol)
-            chain.append(c.asPython())
+            chain.append(c.as_python())
         return ' '.join(chain)
 
     def _op(self, other, operator):

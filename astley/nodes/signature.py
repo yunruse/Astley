@@ -5,7 +5,7 @@ import _ast
 from .datanodes import Datanode
 from . import Node
 
-__all__ = 'arg arguments funcSignature'.split()
+__all__ = 'arg arguments func_signature'.split()
 
 class arg(_ast.arg, Datanode):
     """Name and optional annotation."""
@@ -21,15 +21,15 @@ class arguments(_ast.arguments, Datanode):
         kwonlyargs=[], kw_defaults=[], kwarg=None
     )
 
-    def _asPython(self):
+    def _as_python(self):
         n_required = len(self.args) - len(self.defaults)
         words = []
 
-        def argify(variables, defaults, isKwargsOnly):
+        def argify(variables, defaults, is_kwargs_only):
             for n, arg in enumerate(variables):
 
                 defa = None
-                if isKwargsOnly:
+                if is_kwargs_only:
                     defa = defaults[n]
                 elif defaults:
                     # __defaults__ applies to the tail of the variables
@@ -38,13 +38,13 @@ class arguments(_ast.arguments, Datanode):
                         defa = defaults[dindex]
 
                 if isinstance(defa, Node):
-                    defa = defa.asPython()
+                    defa = defa.as_python()
 
                 word = arg.arg
                 ann = arg.annotation
 
                 if ann is not None:
-                    word += ': {}'.format(ann.asPython())
+                    word += ': {}'.format(ann.as_python())
                     if defa is not None:
                         word += ' = ' + defa
                 else:
@@ -68,14 +68,14 @@ class arguments(_ast.arguments, Datanode):
         return ', '.join(words)
 
     @classmethod
-    def fromFunction(cls, f):
+    def from_function(cls, f):
         '''Extract signature from compiled function.'''
         c = f.__code__
         n = c.co_argcount
         n_k = c.co_kwonlyargcount
 
-        hasKwargs = (c.co_flags & 0b0001000) >> 3
-        hasArgs = (c.co_flags & 0b0000100) >> 2
+        has_kwargs = (c.co_flags & 0b0001000) >> 3
+        has_args = (c.co_flags & 0b0000100) >> 2
 
         def args(q):
             return [arg(name, f.__annotations__.get(name, None)) for name in q]
@@ -83,11 +83,11 @@ class arguments(_ast.arguments, Datanode):
         return cls(
             args = args(c.co_varnames[:n]),
             defaults = f.__defaults__ or tuple(),
-            vararg = arg(c.co_varnames[n + 1]) if hasArgs else None,
+            vararg = arg(c.co_varnames[n + 1]) if has_args else None,
             kwonlyargs = args(c.co_varnames[n : n+n_k]),
             kw_defaults = f.__kwdefaults__ or tuple(),
-            kwarg = arg(c.co_varnames[n + 1 + hasArgs]) if hasKwargs else None
+            kwarg = arg(c.co_varnames[n + 1 + has_args]) if has_kwargs else None
         )
 
-def funcSignature(f):
-    return arguments.fromFunction(f).asPython()
+def func_signature(f):
+    return arguments.from_function(f).as_python()

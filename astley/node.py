@@ -33,7 +33,7 @@ class CodeDisplay:
     def __getattr__(self, attr):
         item = getattr(self._node, attr, None)
         if isinstance(item, Node):
-            return item.asPython()
+            return item.as_python()
         elif item is not None:
             return item
         else:
@@ -75,20 +75,20 @@ class Node:
             for name, val in kwargs.items():
                 setattr(self, name, val)
 
-    def display(self, nodesLeftToDisplay=-1, showAttributes=True, asTree=False):
-        if asTree and not nodesLeftToDisplay:
+    def display(self, display_nodes_left=-1, show_attrs=True, as_tree=False):
+        if as_tree and not display_nodes_left:
             return '@'
 
         fields = []
-        for i in tuple(self._fields) + tuple(self._attributes) * showAttributes:
+        for i in tuple(self._fields) + tuple(self._attributes) * show_attrs:
             v = getattr(self, i, None)
             if v is None:
                 continue
             elif isinstance(v, Node):
-                v = v.display(nodesLeftToDisplay - 1, True, asTree)
+                v = v.display(display_nodes_left - 1, True, as_tree)
             elif isinstance(v, (tuple, list)):
                 v = "[{}]".format(', '.join(
-                    i.display(nodesLeftToDisplay - 1, True, asTree)
+                    i.display(display_nodes_left - 1, True, as_tree)
                     if isinstance(i, Node) else repr(i)
                     for i in v
                 ))
@@ -96,7 +96,7 @@ class Node:
                 v = repr(v)
             fields.append("{}={}".format(i, v))
 
-        if fields and not nodesLeftToDisplay:
+        if fields and not display_nodes_left:
             args = '...'
         else:
             args = ', '.join(fields)
@@ -114,10 +114,10 @@ class Node:
             and (getattr(self, i, None) == getattr(other, i, None)
                  for i in self._fields))
 
-    def asPython(self):
-        return finalise(self)._asPython()
+    def as_python(self):
+        return finalise(self)._as_python()
 
-    def _asPython(self, indent=1):
+    def _as_python(self, indent=1):
         return self.sym.format(self=CodeDisplay(self))
 
     def compile(self, filename=None):
@@ -129,7 +129,7 @@ class Node:
         locals = locals or dict()
         locals.update(kw)
         if traceback:
-            code = self.asPython()
+            code = self.as_python()
             node = parse(code)
             tmp = tempfile.NamedTemporaryFile('w', delete=False, suffix='.py')
             with tmp as f:

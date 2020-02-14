@@ -48,20 +48,20 @@ def parse_atom(e):
 
 def parse_lisp(source):
     terms = [[Symbol('body')]]
-    stringDelim = None
-    escapeChar = False
+    string_delim = None
+    escape_char = False
     atom = ''
     lastchar = ''
     for i, c in enumerate(source):
-        if stringDelim:
+        if string_delim:
             atom += c
-            if source[i-1] != '\\' and c == stringDelim:
+            if source[i-1] != '\\' and c == string_delim:
                 terms[-1].append(String(eval(atom)))
-                stringDelim = None
+                string_delim = None
                 atom = ''
         else:
             if c in '"':
-                stringDelim = c
+                string_delim = c
             elif c == '(' and not atom:
                 terms.append([])
             

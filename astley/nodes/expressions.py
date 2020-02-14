@@ -6,7 +6,7 @@
 import _ast
 from ast import copy_location
 
-from . import Node, functionKind, Expression, load, store
+from . import Node, function_kind, Expression, load, store
 from .datanodes import keyword
 from .signature import arguments
 
@@ -34,34 +34,34 @@ class expr(Node):
 
 from . import ops
 
-def op_modifier(opKind, op):
-    if opKind == 'cmpop':
+def op_modifier(op_kind, op):
+    if op_kind == 'cmpop':
         def new(self, other):
             return ops.Compare(self, [op()], [other])
-    elif opKind == 'operator':
+    elif op_kind == 'operator':
         def new(self, other):
             return ops.BinOp(self, op(), other)
-    elif opKind == 'unaryop':
+    elif op_kind == 'unaryop':
         def new(self):
             return ops.UnaryOp(op(), self)
     return new
 
 
-for opKind, operators in ops.operators.items():
-    if opKind == 'boolop':
+for op_kind, operators in ops.operators.items():
+    if op_kind == 'boolop':
         continue
 
-    for nodeName, sym, *rest in operators:
+    for node_name, sym, *rest in operators:
         if rest:
             fname = rest[0]
 
-            op = getattr(ops, nodeName, None)
+            op = getattr(ops, node_name, None)
             if not op:
                 continue
 
-            method = op_modifier(opKind, op)
+            method = op_modifier(op_kind, op)
             setattr(expr, fname, method)
-            if opKind == 'operator':
+            if op_kind == 'operator':
                 # BinOps have reversible dundermethods
                 rname = fname.replace('__', '__r', 1)
                 setattr(expr, rname, method)
@@ -78,33 +78,31 @@ class Name(expr, _ast.Name):
 class NameS(Name):
     _defaults = {'ctx': store}
 
-def stringFormat(string, sep="'"):
+def string_format(string, sep="'"):
     """repr(str) with your choice of separator.
     No guarantees it will work beyond internal usage.
     """
     if sep not in ("'", '"', '"""', "'''"):
         raise ValueError('Invalid separator.')
 
-    isBytes = isinstance(string, bytes)
+    is_bytes = isinstance(string, bytes)
 
-    asRepr = repr(string)[int(isBytes):-1]
-    oldSep = asRepr[0]
-    asRepr = asRepr[1:]
+    old_sep, *as_repr = repr(string)[int(is_bytes):-1]
 
-    if oldSep != sep:
-        asRepr = asRepr.replace('\\' + oldSep, oldSep).replace(sep, '\\' + sep)
+    if old_sep != sep:
+        as_repr = as_repr.replace('\\' + old_sep, old_sep).replace(sep, '\\' + sep)
         if sep in ('"""', "'''"):
-            asRepr = asRepr.replace('\\n', '\n')
+            as_repr = as_repr.replace('\\n', '\n')
 
-    return 'b' * isBytes + sep + asRepr + sep
+    return 'b' * is_bytes + sep + as_repr + sep
 
 
 class Constant(expr, _ast.Constant):
     '''Constant value: number, ellipsis, string or bytes. Used in 3.8+.'''
     __fields__ = ('value', )
-    def _asPython(self):
+    def _as_python(self):
         if isinstance(self.value, (str, bytes)):
-            return stringFormat(self.value, '"')
+            return string_format(self.value, '"')
         elif self.value is None:
             return 'None'
         else:
@@ -112,7 +110,7 @@ class Constant(expr, _ast.Constant):
 
 class NameConstant(expr, _ast.NameConstant):
     '''Keyword literal: True, False, None'''
-    def _asPython(self):
+    def _as_python(self):
         return str(self.value)
 
 class Num(expr, _ast.Num):
@@ -124,16 +122,16 @@ class Ellipsis(expr, _ast.Ellipsis):
 
 class Str(expr, _ast.Str):
     __fields__ = ('s', )
-    def _asPython(self):
-        return stringFormat(self.s, sep='"')
+    def _as_python(self):
+        return string_format(self.s, sep='"')
 
 class Bytes(expr, _ast.Bytes):
     __fields__ = ('s', )
-    def _asPython(self):
-        return stringFormat(self.s, sep='"')
+    def _as_python(self):
+        return string_format(self.s, sep='"')
 
 class JoinedStr(expr, _ast.JoinedStr):
-    def _asPython(self):
+    def _as_python(self):
         body = ''
         for i in self.values:
             if isinstance(i, Str):
@@ -141,7 +139,7 @@ class JoinedStr(expr, _ast.JoinedStr):
             elif isinstance(i, Constant) and isinstance(i.value, str):
                 body += i.value
             else:
-                body += i._asPython()
+                body += i._as_python()
         return 'f' + repr(body)
 
 class Subscript(expr, _ast.Subscript):
@@ -153,26 +151,26 @@ class Attribute(expr, _ast.Attribute):
     sym = '{self.value}.{self.attr}'
 class Call(expr, _ast.Call):
     _defaults = {'keywords': [], 'args': []}
-    def _asPython(self):
+    def _as_python(self):
         return '{}({})'.format(
-            self.func._asPython(), ', '.join(
-                i._asPython() for i in self.args + self.keywords))
+            self.func._as_python(), ', '.join(
+                i._as_python() for i in self.args + self.keywords))
 
 class IfExp(expr, _ast.IfExp):
     sym = '{self.body} if {self.test} else {self.orelse}'
-class Lambda(functionKind, expr, _ast.Lambda):
+class Lambda(function_kind, expr, _ast.Lambda):
     sym = 'lambda {self.args}: {self.body}'
 
     @classmethod
-    def fromFunction(cls, func=None, body=None):
-        return cls(arguments.fromFunction(func), body or None)
+    def from_function(cls, func=None, body=None):
+        return cls(arguments.from_function(func), body or None)
 
 # Iterables
 
 class Iterable(expr):
     @property
     def _elts(self):
-        e = ', '.join(i._asPython() for i in self.elts)
+        e = ', '.join(i._as_python() for i in self.elts)
         print(self, self.elts, e)
         return e
 
@@ -180,21 +178,21 @@ class List(Iterable, _ast.List):
     sym = '[{self._elts}]'
 class Tuple(Iterable, _ast.Tuple):
     _defaults = {'ctx': load}
-    def _asPython(self):
+    def _as_python(self):
         elts = self.elts
         if len(elts) == 0:
             return '()'
         elif len(elts) == 1:
-            return '({}, )'.format(elts[0]._asPython())
+            return '({}, )'.format(elts[0]._as_python())
         else:
             return '({})'.format(self._elts)
 class Dict(Iterable, _ast.Dict):
-    def _asPython(self):
+    def _as_python(self):
         return '{{{}}}'.format(', '.join(
-            k._asPython() + ': ' + v._asPython()
+            k._as_python() + ': ' + v._as_python()
             for k, v in zip(self.keys, self.values)))
 class Set(Iterable, _ast.Set):
-    def _asPython(self):
+    def _as_python(self):
         if self.elts:
             return '{{{}}}'.format(self._elts)
         else:
@@ -204,7 +202,7 @@ class Comprehension(expr):
     '''Iterable comprehension'''
     sym = '{self.elt} {self.elements}'
     elements = property(lambda s: ' '.join(
-        i._asPython() for i in s.generators))
+        i._as_python() for i in s.generators))
 
 class GeneratorExp(Comprehension, _ast.GeneratorExp):
     sym = '({self.elt} {self.elements})'

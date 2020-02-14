@@ -19,9 +19,9 @@ def match(cls=None, **kw):
 
     @match
     class NewLang(Language):
-        @match(kind=Add, mode='eval', bareNode=True)
-        @match(kind=AugAssign, op=Add, mode='eval', bareNode=True)
-        def PrintAddition(self, node):
+        @match(kind=Add, mode='eval', bare_node=True)
+        @match(kind=AugAssign, op=Add, mode='eval', bare_node=True)
+        def Print_Every_Add_I_see(self, node):
             print(node.left, node.right)
     """
     L = "_LanguageMatch"
@@ -45,13 +45,13 @@ def match(cls=None, **kw):
                 if not isinstance(kinds, (tuple, list)):
                     kinds = (kinds,)
                 for k in kinds:
-                    if k not in cls.matchCond:
-                        cls.matchCond[k] = []
-                    cls.matchCond[k].append((kw, func))
+                    if k not in cls.match_conds:
+                        cls.match_conds[k] = []
+                    cls.match_conds[k].append((kw, func))
         return cls
 
 
-def parseTry(source, filename):
+def parse_try(source, filename):
     try:
         return parse(source, filename, "eval"), "eval"
     except SyntaxError:
@@ -73,22 +73,22 @@ class Language(NodeTransformer):
     automatically determine it from source code or node.
     """
 
-    def _matchCond(self, kw, node):
-        """Handles advanced properties of matchCond."""
+    def _match_cond(self, kw, node):
+        """Handles advanced properties of match_cond."""
         if not len(kw):
             return True
 
-        correctBare = True
-        if hasattr(self.node, "body") and "bareNode" in kw:
-            correctBare = (node in self.node.body) == kw.get("bareNode")
+        correct_bare = True
+        if hasattr(self.node, "body") and "bare_node" in kw:
+            correct_bare = (node in self.node.body) == kw.get("bare_node")
 
-        correctFields = all(
+        correct_fields = all(
             getattr(node, i) == v or isinstance(getattr(node, i), v)
             for i, v in kw.items()
             if i in node._fields
         )
 
-        conds = (self.mode == kw.get("mode", self.mode), correctBare, correctFields)
+        conds = (self.mode == kw.get("mode", self.mode), correct_bare, correct_fields)
         return all(conds)
 
     def visit(self, node):
@@ -98,17 +98,16 @@ class Language(NodeTransformer):
         if visitor:
             return visitor(node)
 
-        possibleMatches = self.matchCond.get(type(node), [])
-        for kw, func in possibleMatches:
-            if self._matchCond(kw, node):
+        matches = self.match_conds.get(type(node), [])
+        for kw, func in matches:
+            if self._match_cond(kw, node):
                 return func(self, node)
         else:
             return self.generic_visit(node)
 
-    matchCond = {}  # {type: [{conditions}, nodeFunc]}
+    match_conds = {}  # {type: [{conditions}, node_func]}
 
     def __init__(self, node=None, **kw):
-
         if node is None:
             # maintain `ast` compatibility
             self.mode = "classic"
@@ -127,29 +126,28 @@ class Language(NodeTransformer):
             self.node = modify(node)
         elif isinstance(node, str):
             if self.mode is None:
-                self.node, self.mode = parseTry(node, self.filename)
+                self.node, self.mode = parse_try(node, self.filename)
             else:
                 self.node = parse(node, self.filename, self.mode)
         else:
             raise TypeError("Must be node or source.")
 
         if self.mode is None:
-            isExpr = isinstance(self.node, (expr, Expression))
-            self.mode = "eval" if isExpr else "exec"
+            self.mode = "eval" if isinstance(self.node, (expr, Expression)) else "exec"
 
         self.globals = kw.get("globals", globals())
         self.locals = kw.get("locals", dict())
 
-        self.onVisitStart()
+        self.on_visit_start()
         self.visit(self.node)
-        self.onVisitFinish()
+        self.on_visit_finish()
 
     # overwritable methods
 
-    def onVisitStart(self):
+    def on_visit_start(self):
         pass
 
-    def onVisitFinish(self):
+    def on_visit_finish(self):
         pass
 
     def compile(self, flags=0):
@@ -162,15 +160,15 @@ class Language(NodeTransformer):
         return exec(self.compile(), self.globals, self.locals)
 
     @classmethod
-    def staticCompile(cls, source, filename, mode, flags=0, **kw):
+    def compiles(cls, source, filename, mode, flags=0, **kw):
         return cls(source, filename=filename, mode=mode, **kw).compile(flags)
 
     @classmethod
-    def staticEval(cls, source, globals=None, locals=None, **kw):
+    def evals(cls, source, globals=None, locals=None, **kw):
         return cls(source, globals=globals, locals=locals, **kw).eval()
 
     @classmethod
-    def staticExec(cls, source, globals=None, locals=None, **kw):
+    def execs(cls, source, globals=None, locals=None, **kw):
         cls(source, globals=globals, locals=locals, **kw).exec()
 
 
@@ -178,6 +176,6 @@ class Python(Language):
     """Base language 'transformer' for code consistency."""
 
     visit = lambda self, node: None
-    staticEval = eval
-    staticExec = exec
-    staticCompile = compile
+    evals = eval
+    execs = exec
+    compiles = compile
