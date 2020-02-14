@@ -24,7 +24,10 @@ DFIELDS = ("lineno", "col_offset")
 PyCF_ONLY_AST = 1024
 
 def parse(source, filename="<unknown>", mode="exec"):
-    return modify(compile(source, filename, mode, PyCF_ONLY_AST))
+    return modify(compile(
+        source, filename,
+        "eval" if mode is eval else "exec" if mode is exec else mode,
+        PyCF_ONLY_AST))
 
 class CodeDisplay:
     def __init__(self, node):
@@ -147,6 +150,8 @@ class Node:
             
         else:
             return func(finalise(self).compile('<astley>'), globals, locals)
+    
+    # TODO: allow for eval(1, 2, 3), auto-applying to un-kwarg'd names in alphabetical order
 
     def eval(self, globals=None, locals=None, traceback=True, **kw):
         """

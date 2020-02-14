@@ -19,7 +19,7 @@ def match(cls=None, **kw):
 
     @match
     class NewLang(Language):
-        @match(kind=Add, mode='eval', bare_node=True)
+        @match(kind=Add, mode=eval, bare_node=True)
         @match(kind=AugAssign, op=Add, mode='eval', bare_node=True)
         def Print_Every_Add_I_see(self, node):
             print(node.left, node.right)
@@ -119,22 +119,24 @@ class Language(NodeTransformer):
         else:
             self.filename = kw.get("filename", "<{}>".format(self.__class__.__name__))
 
-        self.mode = kw.get("mode")
+        mode = kw.get("mode")
         if isinstance(node, Node):
             self.node = node
         elif isinstance(node, AST):
             self.node = modify(node)
         elif isinstance(node, str):
-            if self.mode is None:
-                self.node, self.mode = parse_try(node, self.filename)
+            mode = "eval" if mode is eval else "exec" if mode is exec else mode
+            if mode is None:
+                self.node, mode = parse_try(node, self.filename)
             else:
-                self.node = parse(node, self.filename, self.mode)
+                self.node = parse(node, self.filename, mode)
         else:
             raise TypeError("Must be node or source.")
-
-        if self.mode is None:
-            self.mode = "eval" if isinstance(self.node, (expr, Expression)) else "exec"
-
+        
+        if mode is None:
+            mode = "eval" if isinstance(self.node, (expr, Expression)) else "exec"
+        
+        self.mode = mode
         self.globals = kw.get("globals", globals())
         self.locals = kw.get("locals", dict())
 
