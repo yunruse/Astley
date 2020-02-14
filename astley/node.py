@@ -42,6 +42,28 @@ class CodeDisplay:
         else:
             return ""
 
+# extremely unlikely sentinel
+NODE = "ϨϨϨ"
+
+class _Face:
+    def __repr__(self):
+        return "The ._.,  ._== and ._!= operators produce correct code."
+
+    __slots__ = (NODE, )
+    def __new__(cls, node):
+        self = object.__new__(cls)
+        setattr(self, NODE, node)
+        return self
+
+    def __getattribute__(self, name):
+        node = object.__getattribute__(self, NODE)
+        return Attribute(node, name)
+
+    def __eq__(self, value):
+        return object.__getattribute__(self, NODE).__equate__(value)
+
+    def __ne__(self, value):
+        return object.__getattribute__(self, NODE).__nequate__(value)
 
 class Node:
     sym = ""
@@ -55,6 +77,7 @@ class Node:
             ))
 
     def __init__(self, *args, **kw):
+        self._ = _Face(self)
         if not args or kw:
             return
         if len(args) == 1 and isinstance(args[0], AST):
@@ -114,8 +137,11 @@ class Node:
 
     def __eq__(self, other):
         return (self._fields == other._fields
-            and (getattr(self, i, None) == getattr(other, i, None)
+            and all(getattr(self, i, None) == getattr(other, i, None)
                  for i in self._fields))
+
+    def __ne__(self, other):
+        return not self == other
 
     def as_python(self):
         return finalise(self)._as_python()
@@ -185,3 +211,4 @@ def modify(node):
 
 from . import nodes
 from .finalise import finalise
+from .nodes.expressions import Attribute

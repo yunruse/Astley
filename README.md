@@ -24,6 +24,15 @@ f(x ** 2 + y, end='!') f(x ** 2 + y, end='!')
 104!
 ```
 
+For the most part all operators 'just work' on any node. However, `.` allows access for node-based methods, and `==` and `!==` are used for equality checks of nodes, so these three operators must be prepended with `._`:
+
+```python
+>>> from astley import x, y
+>>> node = x._.y ._== 2
+>>> print(node.as_python())
+x.y == 2
+```
+
 ## Legal
 
 Copyright (c) Mia Dobson ([yunruse](yunruse)) 2018-2020.

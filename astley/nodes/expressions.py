@@ -53,7 +53,9 @@ for op_kind, operators in ops.operators.items():
 
     for node_name, sym, *rest in operators:
         if rest:
-            fname = rest[0]
+            fname = rest[0].replace('eq', 'equate').replace('ne', 'nequate')
+            # to avoid ambiguity, making a node of comparison is handled as
+            # x ._== y and x ._!= y.
 
             op = getattr(ops, node_name, None)
             if not op:

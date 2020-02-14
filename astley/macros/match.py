@@ -1,7 +1,7 @@
 
 from ..node import Node
 
-from astley import NodeTransformer, iter_child_nodes
+from .. import NodeTransformer, iter_child_nodes
 
 __all__ = 'match Rule Ruleset Transformation'.split()
 
