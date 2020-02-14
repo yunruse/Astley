@@ -22,3 +22,7 @@ from .transformer import *
 from .finalise import finalise
 
 AST = Node
+
+LETTERS = [chr(i) for i in range(0x0, 0x400) if chr(i).isalpha()]
+for l in LETTERS:
+    globals()[l] = Name(l)
