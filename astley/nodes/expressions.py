@@ -88,6 +88,7 @@ def string_format(string, sep="'"):
     is_bytes = isinstance(string, bytes)
 
     old_sep, *as_repr = repr(string)[int(is_bytes):-1]
+    as_repr = ''.join(as_repr)
 
     if old_sep != sep:
         as_repr = as_repr.replace('\\' + old_sep, old_sep).replace(sep, '\\' + sep)
