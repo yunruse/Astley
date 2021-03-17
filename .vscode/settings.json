@@ -1,16 +1,15 @@
 {
-    "python.unitTest.unittestArgs": [
-        "-v",
-        "-s",
-        "./tests",
-        "-p",
-        "test*.py"
-    ],
-    "python.unitTest.pyTestEnabled": false,
-    "python.unitTest.nosetestsEnabled": false,
-    "python.unitTest.unittestEnabled": true,
-    "python.formatting.provider": "black",
-    "python.linting.ignorePatterns": [
-        "tests/result_*.py",
-    ]
+  "python.testing.unittestArgs": [
+    "-v",
+    "-s",
+    "./tests",
+    "-p",
+    "test*.py"
+  ],
+  "python.testing.pytestEnabled": false,
+  "python.testing.nosetestsEnabled": false,
+  "python.testing.unittestEnabled": true,
+  "python.linting.ignorePatterns": [
+    "tests/result_*.py",
+  ]
 }
