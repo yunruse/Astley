@@ -175,9 +175,7 @@ class Language(NodeTransformer):
 
 
 class Python(Language):
-    """Base language 'transformer' for code consistency."""
+    """Base language 'transformer'. Has no effect."""
 
-    visit = lambda self, node: None
-    evals = eval
-    execs = exec
-    compiles = compile
+    def visit(self, node):
+        pass
