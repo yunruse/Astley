@@ -12,7 +12,7 @@ from .datanodes import keyword
 from .signature import arguments
 
 __all__ = '''\
-expr Expr Name NameS Constant JoinedStr \
+expr Expr Name NameS Constant JoinedStr NamedExpr \
 NameConstant Num Str Bytes Ellipsis \
 Subscript Attribute Call IfExp Lambda \
 Iterable List Tuple Dict Set \
@@ -117,6 +117,10 @@ class Constant(expr, _ast.Constant):
 # It could do with some changes if it was needed for cross-version transpilation.
 
 if version_info >= (3, 8):
+    class NamedExpr(expr, _ast.NamedExpr):
+        '''Expression with an assignment, `x := y`.'''
+        sym = '({self.target} := {self.value})'
+
     class NameConstant(Constant):
         '''Keyword literal: True, False, None. Alias for Constant.'''
 
@@ -135,6 +139,11 @@ if version_info >= (3, 8):
         '''Bytes literal. Alias for Constant.'''
 
 else:
+    class NamedExpr(expr, _ast.NamedExpr):
+        '''Expression with an assignment, `x := y`.'''
+        def _as_python(self):
+            raise NotImplementedError('This only works in Python 3.8.')
+
     class NameConstant(expr, _ast.NameConstant):
         '''Keyword literal: True, False, None. Subsumed into Constant after 3.8.'''
         def _as_python(self):
