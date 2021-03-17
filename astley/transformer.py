@@ -143,6 +143,9 @@ class Language(NodeTransformer):
         self.on_visit_start()
         self.visit(self.node)
         self.on_visit_finish()
+    
+    def as_python(self):
+        return self.node.as_python()
 
     # overwritable methods
 
