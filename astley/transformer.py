@@ -178,4 +178,4 @@ class Python(Language):
     """Base language 'transformer'. Has no effect."""
 
     def visit(self, node):
-        pass
+        return node
