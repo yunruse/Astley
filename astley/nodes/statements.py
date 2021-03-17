@@ -112,7 +112,7 @@ class AsyncBlock(Block):
 
 def _display(item, indent=0):
     if isinstance(item, Block):
-        return item.as_python(indent)
+        return item._as_python(indent)
     else:
         if isinstance(item, Node):
             item = item.as_python()
