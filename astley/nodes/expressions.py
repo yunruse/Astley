@@ -5,14 +5,15 @@
 
 import _ast
 from ast import copy_location
+from sys import version_info
 
 from . import Node, function_kind, Expression, load, store
 from .datanodes import keyword
 from .signature import arguments
 
 __all__ = '''\
-expr Expr Name NameS NameConstant Constant \
-Num Ellipsis Str Bytes JoinedStr \
+expr Expr Name NameS Constant JoinedStr \
+NameConstant Num Str Bytes Ellipsis \
 Subscript Attribute Call IfExp Lambda \
 Iterable List Tuple Dict Set \
 Comprehension GeneratorExp ListComp DictComp SetComp
@@ -111,27 +112,51 @@ class Constant(expr, _ast.Constant):
         else:
             return repr(self.value)
 
-class NameConstant(expr, _ast.NameConstant):
-    '''Keyword literal: True, False, None'''
-    def _as_python(self):
-        return str(self.value)
+# In 3.8, a lot of constants are merged.
+# TODO: This is really a hotfix.
+# It could do with some changes if it was needed for cross-version transpilation.
 
-class Num(expr, _ast.Num):
-    '''Numerical literal of type int, float or complex.'''
-    sym = '{self.n}'
+if version_info >= (3, 8):
+    class NameConstant(Constant):
+        '''Keyword literal: True, False, None. Alias for Constant.'''
 
-class Ellipsis(expr, _ast.Ellipsis):
-    sym = '...'
+    class Ellipsis(Constant):
+        '''Ellipsis literal. Useful in 3rd party packages such as numpy. Alias for Constant.'''
+        def _as_python(self):
+            return '...'
 
-class Str(expr, _ast.Str):
-    __fields__ = ('s', )
-    def _as_python(self):
-        return string_format(self.s, sep='"')
+    class Num(Constant):
+        '''Numerical literal of type int, float or complex. Alias for Constant.'''
 
-class Bytes(expr, _ast.Bytes):
-    __fields__ = ('s', )
-    def _as_python(self):
-        return string_format(self.s, sep='"')
+    class Str(Constant):
+        '''String literal. Alias for Constant.'''
+
+    class Bytes(Constant):
+        '''Bytes literal. Alias for Constant.'''
+
+else:
+    class NameConstant(expr, _ast.NameConstant):
+        '''Keyword literal: True, False, None. Subsumed into Constant after 3.8.'''
+        def _as_python(self):
+            return str(self.value)
+
+    class Ellipsis(expr, _ast.Ellipsis):
+        sym = '...'
+
+    class Num(expr, _ast.Num):
+        '''Numerical literal of type int, float or complex.'''
+        sym = '{self.n}'
+
+    class Str(expr, _ast.Str):
+        __fields__ = ('s', )
+        def _as_python(self):
+            return string_format(self.s, sep='"')
+
+    class Bytes(expr, _ast.Bytes):
+        __fields__ = ('s', )
+        def _as_python(self):
+            return string_format(self.s, sep='"')
+
 
 class JoinedStr(expr, _ast.JoinedStr):
     def _as_python(self):

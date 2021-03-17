@@ -20,8 +20,13 @@ def finalise(node):
     return _finalise(node)
 
 def _finalise(node, lineno=1, col_offset=0, _lvl=0):
-    if version_info >= (3, 8) and isinstance(
-            node, (bool, int, float, complex, str, bytes)):
+    if version_info >= (3, 8) and(
+        node is None or
+        node is True or
+        node is False or
+        node is Ellipsis or isinstance(
+            node, (int, float, complex, str, bytes)
+    )):
         return Constant(node)
 
     elif isinstance(node, bool):
@@ -61,10 +66,14 @@ def _finalise(node, lineno=1, col_offset=0, _lvl=0):
 
         for name in node._fields:
             field = getattr(node, name, None)
-            # Convert tuple-fields into lists
             if isinstance(field, tuple):
+                # Convert tuple-fields into lists
                 field = list(field)
-            if isinstance(field, (list, AST)) or name in NODE_ONLY_FIELDS:
+
+            # Avoid infinite recursion!
+            if type(node).__name__ == 'Constant' and name == 'value':
+                pass
+            elif isinstance(field, (list, AST)) or name in NODE_ONLY_FIELDS:
                 setattr(node, name, _finalise(field, lineno, col_offset, _lvl+1))
 
     return node
